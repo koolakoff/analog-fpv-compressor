@@ -1,0 +1,16 @@
+# Local source footage and generated outputs
+examples/*
+!examples/README.md
+outputs/
+benchmarks/results/
+*.avi
+*.AVI
+*.mp4
+*.mkv
+*.mov
+
+# Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/

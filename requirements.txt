@@ -1,0 +1,2 @@
+# Reproducible initial research environment (Python >= 3.10)
+numpy==2.2.6
