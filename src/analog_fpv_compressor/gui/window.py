@@ -154,7 +154,11 @@ class MainWindow(QMainWindow):
         self.snow = self.form_row(processing_form, "White noise", self.combo([
             ("remove", "Remove and join useful parts"), ("split", "Remove and split into files"),
             ("keep", "Keep")]))
-        self.snow.setCurrentIndex(self.snow.findData("split"))
+        snow_mode = self.preferences.value("snow_mode", "split")
+        snow_index = self.snow.findData(snow_mode)
+        self.snow.setCurrentIndex(snow_index if snow_index >= 0 else self.snow.findData("split"))
+        self.snow.currentIndexChanged.connect(
+            lambda: self.preferences.setValue("snow_mode", self.snow.currentData()))
         self.audio = self.bind(QCheckBox(), "Keep audio")
         processing_form.addRow(self.audio)
         settings_layout.addWidget(self.processing_group)
@@ -359,7 +363,12 @@ class MainWindow(QMainWindow):
 
     def choose_files(self):
         if self.thread is None:
-            paths, _ = QFileDialog.getOpenFileNames(self, tr("Add files…"), "", tr("Video files (*.avi *.mkv *.mp4 *.mov);;All files (*)"))
+            directory = str(self.preferences.value("last_input_dir", ""))
+            if directory and not Path(directory).is_dir():
+                directory = ""
+            paths, _ = QFileDialog.getOpenFileNames(self, tr("Add files…"), directory, tr("Video files (*.avi *.mkv *.mp4 *.mov);;All files (*)"))
+            if paths:
+                self.preferences.setValue("last_input_dir", str(Path(paths[0]).resolve().parent))
             self.add_paths(paths)
 
     def remove_selected(self):

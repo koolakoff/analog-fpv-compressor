@@ -100,6 +100,44 @@ class GuiTests(unittest.TestCase):
             self.assertEqual(self.window.preferences.value("language"), language)
         self.assertEqual(tr("Untranslated future message"), "Untranslated future message")
 
+    def test_restart_remembers_only_requested_processing_preferences(self):
+        preferences_path = self.root / "preferences.ini"
+        for mode in ("remove", "keep", "split"):
+            self.window.snow.setCurrentIndex(self.window.snow.findData(mode))
+            self.window.denoise.setCurrentIndex(self.window.denoise.findData("strong"))
+            self.window.output_dir.setText(str(self.root))
+            self.window.suffix.setText("_custom")
+            self.window.preferences.sync()
+            self.window.close()
+            preferences = QSettings(str(preferences_path), QSettings.Format.IniFormat)
+            self.window = MainWindow(preferences, log_path=self.root / "fpv-compress.log")
+            self.assertEqual(self.window.snow.currentData(), mode)
+            self.assertEqual(self.window.denoise.currentData(), "auto")
+            self.assertEqual(self.window.output_dir.text(), "")
+            self.assertEqual(self.window.suffix.text(), "_converted")
+            self.assertEqual(self.window.queue.topLevelItemCount(), 0)
+
+    def test_input_dialog_remembers_folder_and_preserves_it_on_cancel(self):
+        source = self.root / "input.avi"
+        source.touch()
+        with patch("analog_fpv_compressor.gui.window.QFileDialog.getOpenFileNames",
+                   return_value=([str(source)], "")):
+            self.window.choose_files()
+        self.window.preferences.sync()
+        self.window.close()
+        preferences = QSettings(str(self.root / "preferences.ini"), QSettings.Format.IniFormat)
+        self.window = MainWindow(preferences, log_path=self.root / "fpv-compress.log")
+        with patch("analog_fpv_compressor.gui.window.QFileDialog.getOpenFileNames",
+                   return_value=([], "")) as dialog:
+            self.window.choose_files()
+            self.assertEqual(dialog.call_args.args[2], str(self.root))
+        self.assertEqual(self.window.preferences.value("last_input_dir"), str(self.root))
+        self.window.preferences.setValue("last_input_dir", str(self.root / "missing"))
+        with patch("analog_fpv_compressor.gui.window.QFileDialog.getOpenFileNames",
+                   return_value=([], "")) as dialog:
+            self.window.choose_files()
+            self.assertEqual(dialog.call_args.args[2], "")
+
     def test_output_modes_and_input_deduplication(self):
         source = self.root / "input.avi"
         source.touch()

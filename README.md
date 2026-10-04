@@ -2,7 +2,8 @@ Translations: [Русский](docs/README_RU.md) · [Українська](docs
 
 # analog-fpv-compressor
 
-**Smaller DVR recordings from analog FPV drones, with useful flight information preserved.**
+**A video encoder for compressing DVR recordings from analog FPV drones.**
+It reduces file size while preserving useful flight information.
 The program combines noise reduction, automatic white-noise removal and flight
 splitting in one workflow, available through a Windows GUI or an English CLI.
 

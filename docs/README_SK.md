@@ -2,7 +2,8 @@
 
 # analog-fpv-compressor
 
-**Menšie DVR záznamy z analógových FPV dronov so zachovaním užitočných informácií o lete.**
+**Program na kódovanie a kompresiu DVR záznamov z analógových FPV dronov.**
+Umožňuje zmenšiť veľkosť videa pri zachovaní užitočných informácií o lete.
 Program spája potlačenie šumu, automatické odstránenie bieleho šumu a rozdelenie
 letov do jedného postupu, s grafickým rozhraním pre Windows a anglickým CLI.
 
