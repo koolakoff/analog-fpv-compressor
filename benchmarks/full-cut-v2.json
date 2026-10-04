@@ -1,0 +1,6 @@
+[
+  {"id":"full-oneflight-cut-c48-v2", "input":"examples/air-school-stadion-oneflight.AVI", "crf":48, "denoise":"3:5:1.5:6", "keep":[[0,279.44892]]},
+  {"id":"full-termination-cut-c48-v2", "input":"examples/air-school-stadion-with-termination.AVI", "crf":48, "denoise":"3:5:1.5:6", "keep":[[0,75.811526],[127.061206,128.40039],[144.229512,344.485032]]},
+  {"id":"full-oneflight-cut-scale480-v2", "input":"examples/air-school-stadion-oneflight.AVI", "crf":48, "denoise":"3:5:1.5:6", "scale":[480,360], "keep":[[0,279.44892]]},
+  {"id":"full-termination-cut-scale480-v2", "input":"examples/air-school-stadion-with-termination.AVI", "crf":48, "denoise":"3:5:1.5:6", "scale":[480,360], "keep":[[0,75.811526],[127.061206,128.40039],[144.229512,344.485032]]}
+]

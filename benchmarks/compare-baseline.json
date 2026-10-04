@@ -1,0 +1,17 @@
+[
+  {"id":"compare-sun-crf", "inputs":[
+    {"path":"examples/air-school-stadion-oneflight.AVI","time":27,"label":"Source 00-27"},
+    {"path":"benchmarks/results/initial/sun-medium-c34-p6.mkv","time":7,"label":"AV1 CRF34 medium"},
+    {"path":"benchmarks/results/initial/sun-medium-c42-p6.mkv","time":7,"label":"AV1 CRF42 medium"},
+    {"path":"benchmarks/results/initial/sun-medium-c48-p6.mkv","time":7,"label":"AV1 CRF48 medium"}]},
+  {"id":"compare-motion-crf", "inputs":[
+    {"path":"examples/air-school-stadion-oneflight.AVI","time":173,"label":"Source 02-53"},
+    {"path":"benchmarks/results/initial/motion-medium-c34-p6.mkv","time":9,"label":"AV1 CRF34 medium"},
+    {"path":"benchmarks/results/initial/motion-medium-c42-p6.mkv","time":9,"label":"AV1 CRF42 medium"},
+    {"path":"benchmarks/results/initial/motion-medium-c48-p6.mkv","time":9,"label":"AV1 CRF48 medium"}]},
+  {"id":"compare-interference-crf", "inputs":[
+    {"path":"examples/air-school-stadion-with-termination.AVI","time":242,"label":"Source 04-02"},
+    {"path":"benchmarks/results/initial/interference-medium-c34-p6.mkv","time":12,"label":"AV1 CRF34 medium"},
+    {"path":"benchmarks/results/initial/interference-medium-c42-p6.mkv","time":12,"label":"AV1 CRF42 medium"},
+    {"path":"benchmarks/results/initial/interference-medium-c48-p6.mkv","time":12,"label":"AV1 CRF48 medium"}]}
+]

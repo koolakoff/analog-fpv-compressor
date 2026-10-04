@@ -1,0 +1,127 @@
+[
+  {
+    "id": "aligned-sun-aggressive",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c54-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c54-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-scale480-c48.mkv",
+        "frame": 210,
+        "label": "sun-scale480-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-sun-deflicker",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 778,
+        "label": "Source 26.016s frame 778"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-off-c48-p6.mkv",
+        "frame": 180,
+        "label": "sun-off-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 180,
+        "label": "sun-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-deflicker-c48.mkv",
+        "frame": 180,
+        "label": "sun-deflicker-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-motion-aggressive",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 5179,
+        "label": "Source 173.030s frame 5179"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c48-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c54-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c54-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-scale480-c48.mkv",
+        "frame": 270,
+        "label": "motion-scale480-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-aggressive",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c54-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c54-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-scale480-c48.mkv",
+        "frame": 344,
+        "label": "interference-scale480-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-deflicker",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-off-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-off-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-deflicker-c48.mkv",
+        "frame": 344,
+        "label": "interference-deflicker-c48"
+      }
+    ]
+  }
+]

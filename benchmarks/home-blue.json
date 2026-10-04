@@ -1,0 +1,3 @@
+[
+  {"id":"home-blue-only-c48", "input":"examples/home-other-helmet.AVI", "start":89.7, "duration":4.8, "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6"}
+]

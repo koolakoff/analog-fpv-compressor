@@ -1,0 +1,277 @@
+[
+  {
+    "id": "aligned-sun-quality",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c34-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c42-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c48-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-sun-denoise",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-off-c34-p6.mkv",
+        "frame": 210,
+        "label": "sun-off-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-weak-c34-p6.mkv",
+        "frame": 210,
+        "label": "sun-weak-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c34-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c34-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-sun-codec",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-hevc-c32.mkv",
+        "frame": 210,
+        "label": "sun-hevc-c32"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-hevc-c36.mkv",
+        "frame": 210,
+        "label": "sun-hevc-c36"
+      }
+    ]
+  },
+  {
+    "id": "aligned-sun-scale",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c42-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-scale480-c48.mkv",
+        "frame": 210,
+        "label": "sun-scale480-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-motion-quality",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 5179,
+        "label": "Source 173.030s frame 5179"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c34-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c42-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c48-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c48-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-motion-denoise",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 5179,
+        "label": "Source 173.030s frame 5179"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-off-c34-p6.mkv",
+        "frame": 270,
+        "label": "motion-off-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-weak-c34-p6.mkv",
+        "frame": 270,
+        "label": "motion-weak-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c34-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c34-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-motion-scale",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 5179,
+        "label": "Source 173.030s frame 5179"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c42-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c48-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-scale480-c48.mkv",
+        "frame": 270,
+        "label": "motion-scale480-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-quality",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c34-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c42-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-denoise",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-off-c34-p6.mkv",
+        "frame": 344,
+        "label": "interference-off-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-weak-c34-p6.mkv",
+        "frame": 344,
+        "label": "interference-weak-c34-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c34-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c34-p6"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-codec",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-hevc-c32.mkv",
+        "frame": 344,
+        "label": "interference-hevc-c32"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-hevc-c36.mkv",
+        "frame": 344,
+        "label": "interference-hevc-c36"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-scale",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c42-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c42-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-scale480-c48.mkv",
+        "frame": 344,
+        "label": "interference-scale480-c48"
+      }
+    ]
+  }
+]

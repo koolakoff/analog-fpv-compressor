@@ -1,0 +1,5 @@
+[
+  {"id":"confirmed-flicker-off-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":146, "duration":20, "crf":48},
+  {"id":"confirmed-flicker-medium-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":146, "duration":20, "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"confirmed-flicker-deflicker-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":146, "duration":20, "crf":48, "denoise":"3:5:1.5:6", "deflicker":true}
+]

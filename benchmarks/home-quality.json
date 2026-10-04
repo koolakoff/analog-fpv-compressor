@@ -1,0 +1,12 @@
+[
+  {"id":"home-static-off-c34", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":34},
+  {"id":"home-static-medium-c34", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":34, "denoise":"3:5:1.5:6"},
+  {"id":"home-static-off-c48", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":48},
+  {"id":"home-static-weak-c48", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":48, "denoise":"1.5:3:1:4"},
+  {"id":"home-static-medium-c48", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"home-static-strong-c48", "input":"examples/home-other-helmet.AVI", "start":120, "duration":4, "scale":[720,480], "crf":48, "denoise":"6:8:2:8"},
+  {"id":"home-flight-off-c48", "input":"examples/home-other-helmet.AVI", "start":30, "duration":20, "scale":[720,480], "crf":48},
+  {"id":"home-flight-medium-c48", "input":"examples/home-other-helmet.AVI", "start":30, "duration":20, "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"home-nosignal-off-c48", "input":"examples/home-other-helmet.AVI", "start":61, "duration":29, "scale":[720,480], "crf":48},
+  {"id":"home-nosignal-medium-c48", "input":"examples/home-other-helmet.AVI", "start":61, "duration":29, "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6"}
+]

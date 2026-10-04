@@ -1,0 +1,27 @@
+[
+  {
+    "id": "aligned-confirmed-flicker-v2",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 3907,
+        "label": "Source 152.102s frame 3907"
+      },
+      {
+        "path": "benchmarks/results/initial/confirmed-flicker-off-c48.mkv",
+        "frame": 175,
+        "label": "confirmed-flicker-off-c48"
+      },
+      {
+        "path": "benchmarks/results/initial/confirmed-flicker-medium-c48.mkv",
+        "frame": 175,
+        "label": "confirmed-flicker-medium-c48"
+      },
+      {
+        "path": "benchmarks/results/initial/confirmed-flicker-deflicker-c48.mkv",
+        "frame": 175,
+        "label": "confirmed-flicker-deflicker-c48"
+      }
+    ]
+  }
+]

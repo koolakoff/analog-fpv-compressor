@@ -1,0 +1,11 @@
+[
+  {"id":"sun-off-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":34},
+  {"id":"sun-weak-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":34, "denoise":"1.5:3:1:4"},
+  {"id":"sun-medium-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":34, "denoise":"3:5:1.5:6"},
+  {"id":"motion-off-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":34},
+  {"id":"motion-weak-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":34, "denoise":"1.5:3:1:4"},
+  {"id":"motion-medium-c34-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":34, "denoise":"3:5:1.5:6"},
+  {"id":"interference-off-c34-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":34},
+  {"id":"interference-weak-c34-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":34, "denoise":"1.5:3:1:4"},
+  {"id":"interference-medium-c34-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":34, "denoise":"3:5:1.5:6"}
+]

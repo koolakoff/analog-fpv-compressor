@@ -1,0 +1,8 @@
+[
+  {"id":"overview-oneflight-v2", "input":"examples/air-school-stadion-oneflight.AVI", "fps":"1/18", "tile":"4x4"},
+  {"id":"overview-termination", "input":"examples/air-school-stadion-with-termination.AVI", "fps":"1/22", "tile":"4x4"},
+  {"id":"sun-26", "input":"examples/air-school-stadion-oneflight.AVI", "start":24, "fps":3, "tile":"4x3"},
+  {"id":"snow-entry", "input":"examples/air-school-stadion-with-termination.AVI", "start":73, "fps":2, "tile":"4x3"},
+  {"id":"snow-exit", "input":"examples/air-school-stadion-with-termination.AVI", "start":141, "fps":2, "tile":"4x3"},
+  {"id":"snow-end", "input":"examples/air-school-stadion-oneflight.AVI", "start":278, "fps":2, "tile":"4x3"}
+]

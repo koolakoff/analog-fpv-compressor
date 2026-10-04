@@ -1,0 +1,7 @@
+[
+  {"id":"sun-medium-c54-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":54, "denoise":"3:5:1.5:6"},
+  {"id":"motion-medium-c54-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":54, "denoise":"3:5:1.5:6"},
+  {"id":"interference-medium-c54-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":54, "denoise":"3:5:1.5:6"},
+  {"id":"sun-deflicker-c48", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "denoise":"3:5:1.5:6", "deflicker":true},
+  {"id":"interference-deflicker-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":48, "denoise":"3:5:1.5:6", "deflicker":true}
+]

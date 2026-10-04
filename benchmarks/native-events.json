@@ -1,0 +1,8 @@
+[
+  {"id":"native-flash-oneflight", "input":"examples/air-school-stadion-oneflight.AVI", "first_frame":5639},
+  {"id":"native-flash-termination", "input":"examples/air-school-stadion-with-termination.AVI", "first_frame":3901},
+  {"id":"native-snow-gap", "input":"examples/air-school-stadion-with-termination.AVI", "first_frame":3376},
+  {"id":"native-motion-source", "input":"examples/air-school-stadion-oneflight.AVI", "first_frame":5173},
+  {"id":"native-motion-c48-v2", "input":"benchmarks/results/initial/motion-medium-c48-p6.mkv", "first_frame":264},
+  {"id":"native-motion-c54-v2", "input":"benchmarks/results/initial/motion-medium-c54-p6.mkv", "first_frame":264}
+]

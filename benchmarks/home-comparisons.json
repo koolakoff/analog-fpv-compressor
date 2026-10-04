@@ -1,0 +1,8 @@
+[
+  {"id":"home-static-aligned", "inputs":[
+    {"path":"examples/home-other-helmet.AVI", "frame":3592, "label":"Source 121 s"},
+    {"path":"benchmarks/results/initial/home-static-off-c48.mkv", "frame":30, "label":"AV1 CRF 48 - denoise off"},
+    {"path":"benchmarks/results/initial/home-static-medium-c48.mkv", "frame":30, "label":"AV1 CRF 48 - medium"},
+    {"path":"benchmarks/results/initial/home-static-strong-c48.mkv", "frame":30, "label":"AV1 CRF 48 - strong"}
+  ]}
+]

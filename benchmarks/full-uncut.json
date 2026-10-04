@@ -1,0 +1,4 @@
+[
+  {"id":"full-oneflight-uncut-c48", "input":"examples/air-school-stadion-oneflight.AVI", "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"full-termination-uncut-c48", "input":"examples/air-school-stadion-with-termination.AVI", "crf":48, "denoise":"3:5:1.5:6"}
+]

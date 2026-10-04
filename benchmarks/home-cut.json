@@ -1,0 +1,4 @@
+[
+  {"id":"full-home-cut-snow-c48", "input":"examples/home-other-helmet.AVI", "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6", "keep":[[0,61.35],[87.816667,162.3]]},
+  {"id":"full-home-cut-snow-blue-c48", "input":"examples/home-other-helmet.AVI", "scale":[720,480], "crf":48, "denoise":"3:5:1.5:6", "keep":[[0,61.35],[87.816667,89.616667],[94.583333,162.3]]}
+]

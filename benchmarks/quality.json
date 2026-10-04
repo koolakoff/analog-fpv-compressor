@@ -1,0 +1,20 @@
+[
+  {"id":"sun-medium-c42-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":42, "denoise":"3:5:1.5:6"},
+  {"id":"sun-medium-c48-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"sun-off-c48-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48},
+  {"id":"motion-medium-c42-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":42, "denoise":"3:5:1.5:6"},
+  {"id":"motion-medium-c48-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"motion-off-c48-p6", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":48},
+  {"id":"interference-medium-c42-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":42, "denoise":"3:5:1.5:6"},
+  {"id":"interference-medium-c48-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":48, "denoise":"3:5:1.5:6"},
+  {"id":"interference-off-c48-p6", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":48},
+  {"id":"sun-medium-c48-p4", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "preset":4, "denoise":"3:5:1.5:6"},
+  {"id":"sun-medium-c48-p8", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "preset":8, "denoise":"3:5:1.5:6"},
+  {"id":"sun-hevc-c32", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":32, "preset":"medium", "codec":"libx265", "denoise":"3:5:1.5:6"},
+  {"id":"sun-hevc-c36", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":36, "preset":"medium", "codec":"libx265", "denoise":"3:5:1.5:6"},
+  {"id":"interference-hevc-c32", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":32, "preset":"medium", "codec":"libx265", "denoise":"3:5:1.5:6"},
+  {"id":"interference-hevc-c36", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":36, "preset":"medium", "codec":"libx265", "denoise":"3:5:1.5:6"},
+  {"id":"sun-scale480-c48", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "scale":[480,360], "denoise":"3:5:1.5:6"},
+  {"id":"motion-scale480-c48", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":48, "scale":[480,360], "denoise":"3:5:1.5:6"},
+  {"id":"interference-scale480-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":48, "scale":[480,360], "denoise":"3:5:1.5:6"}
+]

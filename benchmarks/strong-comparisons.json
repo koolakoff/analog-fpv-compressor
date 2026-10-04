@@ -1,0 +1,77 @@
+[
+  {
+    "id": "aligned-sun-strong",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 808,
+        "label": "Source 27.018s frame 808"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-off-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-off-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-medium-c48-p6.mkv",
+        "frame": 210,
+        "label": "sun-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/sun-strong-c48.mkv",
+        "frame": 210,
+        "label": "sun-strong-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-motion-strong",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-oneflight.AVI",
+        "frame": 5179,
+        "label": "Source 173.030s frame 5179"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-off-c48-p6.mkv",
+        "frame": 270,
+        "label": "motion-off-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-medium-c48-p6.mkv",
+        "frame": 270,
+        "label": "motion-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/motion-strong-c48.mkv",
+        "frame": 270,
+        "label": "motion-strong-c48"
+      }
+    ]
+  },
+  {
+    "id": "aligned-interference-strong",
+    "inputs": [
+      {
+        "path": "examples/air-school-stadion-with-termination.AVI",
+        "frame": 6479,
+        "label": "Source 242.035s frame 6479"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-off-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-off-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-medium-c48-p6.mkv",
+        "frame": 344,
+        "label": "interference-medium-c48-p6"
+      },
+      {
+        "path": "benchmarks/results/initial/interference-strong-c48.mkv",
+        "frame": 344,
+        "label": "interference-strong-c48"
+      }
+    ]
+  }
+]

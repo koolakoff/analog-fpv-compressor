@@ -1,0 +1,5 @@
+[
+  {"id":"sun-strong-c48", "input":"examples/air-school-stadion-oneflight.AVI", "start":20, "duration":20, "crf":48, "denoise":"6:8:2:8"},
+  {"id":"motion-strong-c48", "input":"examples/air-school-stadion-oneflight.AVI", "start":164, "duration":20, "crf":48, "denoise":"6:8:2:8"},
+  {"id":"interference-strong-c48", "input":"examples/air-school-stadion-with-termination.AVI", "start":230, "duration":20, "crf":48, "denoise":"6:8:2:8"}
+]
