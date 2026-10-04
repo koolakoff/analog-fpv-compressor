@@ -45,7 +45,7 @@ class JobTests(unittest.TestCase):
         job = make_jobs([source], output_dir=output, output_suffix="_small", output_format="mp4")[0]
         self.assertTrue(output.is_dir())
         self.assertEqual(job.output_path, output / "a_small.mp4")
-        self.assertEqual(job.report_path, output / "a_small.mp4.report.json")
+        self.assertIsNone(job.report_path)
 
     def test_same_stem_in_one_output_directory_fails_before_processing(self):
         one, two = self.source("one/a.avi"), self.source("two/a.avi")
@@ -59,8 +59,7 @@ class JobTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             make_jobs([source], output_suffix="")
         (self.root / "a_converted.mkv.log.jsonl").write_text("keep", encoding="utf-8")
-        with self.assertRaises(FileExistsError):
-            make_jobs([source])
+        make_jobs([source])
         self.assertEqual((self.root / "a_converted.mkv.log.jsonl").read_text(), "keep")
 
     def test_explicit_output_is_single_input_and_unambiguous(self):
@@ -83,8 +82,7 @@ class JobTests(unittest.TestCase):
 
     def test_cross_input_report_collision_is_rejected(self):
         one, two = self.source("a.avi"), self.source("a_converted.mkv.report.json")
-        with self.assertRaises(ValueError):
-            make_jobs([one, two])
+        self.assertEqual(len(make_jobs([one, two])), 2)
 
     def plan(self):
         source = self.source("flight.avi")

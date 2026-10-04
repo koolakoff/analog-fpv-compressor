@@ -60,10 +60,10 @@ class Plan:
 
 @dataclass(frozen=True)
 class Result:
-    """Verified output and the persisted report from an executed plan."""
+    """Verified output and its in-memory diagnostic report."""
 
     output_path: Path
-    report_path: Path
+    report_path: Path | None
     bytes: int
     duration_seconds: float
     report: dict[str, Any]

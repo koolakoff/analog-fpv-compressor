@@ -10,8 +10,11 @@ import subprocess
 from threading import Thread
 import time
 import uuid
+import tempfile
+from collections import deque
 
 from .models import Event, Result, to_dict
+from .progress import emit_progress
 
 
 class ProcessingError(RuntimeError):
@@ -218,10 +221,9 @@ def _run(command, diagnostics, emit=None, cancel=None, total=None, total_frames=
                     # Some muxers report a sentinel timestamp while flushing.
                     if seconds < 0 or (total is not None and seconds > total + 1):
                         seconds = None
-                    _emit(emit, "progress", stage="encode", seconds=seconds,
-                          frames=encoded_frames, total_frames=total_frames,
-                          fraction=min(1.0, encoded_frames / total_frames) if total_frames else
-                          min(1.0, seconds / total) if total and seconds is not None else None)
+                    emit_progress(emit, "encode", encoded_frames if total_frames else seconds,
+                                  total_frames or total, unit="frames" if total_frames else "seconds",
+                                  seconds=seconds, frames=encoded_frames, total_frames=total_frames)
                     last_progress = time.monotonic()
                 except ValueError:
                     pass
@@ -234,7 +236,7 @@ def _run(command, diagnostics, emit=None, cancel=None, total=None, total_frames=
             except subprocess.TimeoutExpired:
                 continue
         if code:
-            raise ProcessingError(f"FFmpeg tool exited with status {code}; see the diagnostic log.")
+            raise ProcessingError(f"FFmpeg tool exited with status {code}.\n{diagnostic_tail(diagnostics)}")
         return "".join(lines)
     finally:
         if process.poll() is None:
@@ -246,6 +248,16 @@ def _run(command, diagnostics, emit=None, cancel=None, total=None, total_frames=
                 process.wait()
         reader.join(timeout=3)
         process.stdout.close()
+
+
+def diagnostic_tail(stream):
+    """Keep a bounded native diagnostic tail rather than a separate persistent file."""
+    stream.flush()
+    position = stream.tell()
+    stream.seek(0)
+    tail = "".join(deque(stream, maxlen=80))[-65536:]
+    stream.seek(position)
+    return tail
 
 
 def validate_output(plan, path, diagnostics, cancel=None):
@@ -341,64 +353,63 @@ def _check_source(plan):
 
 
 def execute(plan, emit=None, cancel=None):
-    """Encode, validate, persist a report and publish only verified results."""
+    """Encode and publish verified media; return diagnostics in memory/events."""
     output = Path(plan.settings.output_path).resolve()
     source = Path(plan.settings.input_path).resolve()
-    report_path = Path(plan.settings.report_path or output.with_suffix(output.suffix + ".report.json")).resolve()
-    if output == source or report_path in (output, source):
-        raise ProcessingError("Input, output and report paths must be distinct.")
+    if output == source:
+        raise ProcessingError("Input and output paths must be distinct.")
     if output.suffix.lower() not in (".mkv", ".mp4"):
         raise ProcessingError("Output container must be MKV or MP4.")
-    if output.exists() or report_path.exists():
-        raise ProcessingError("Output or report already exists; select a new destination.")
+    if output.exists():
+        raise ProcessingError("Output already exists; select a new destination.")
     _check_source(plan)
     segments = _source_segments(plan)
     output.parent.mkdir(parents=True, exist_ok=True)
-    report_path.parent.mkdir(parents=True, exist_ok=True)
     job_id = uuid.uuid4().hex
     temporary = output.with_name(f".{output.stem}.{job_id}.partial{output.suffix}")
-    temporary_report = report_path.with_name(f".{report_path.name}.{job_id}.partial")
-    raw_log = output.with_name(f"{output.stem}.{job_id[:8]}.ffmpeg.log")
     started = time.perf_counter()
     warnings = []
     if plan.selected["audio"] == "keep" and _stream(plan, "audio") is None:
         warnings.append("Input has no audio; the output contains video only.")
         _emit(emit, "warning", message=warnings[-1])
-    report_published = False
-    output_published = False
     try:
         command = build_command(plan, temporary)
-        _emit(emit, "processing_started", output_path=str(output), diagnostic_log=str(raw_log), selected=plan.selected)
-        with raw_log.open("x", encoding="utf-8") as diagnostic:
+        _emit(emit, "processing_started", output_path=str(output), command=command, selected=plan.selected)
+        frame_count = len(expected_timestamps(plan))
+        emit_progress(emit, "encode", 0, frame_count, state="started", unit="frames",
+                      frames=0, total_frames=frame_count, seconds=0.)
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as diagnostic:
             _run(command, diagnostic, emit, cancel, total=float(sum(s["end"] - s["begin"] for s in segments)),
-                 total_frames=len(expected_timestamps(plan)))
+                 total_frames=frame_count)
+            emit_progress(emit, "encode", frame_count, frame_count, state="completed", unit="frames",
+                          frames=frame_count, total_frames=frame_count, seconds=None)
             _emit(emit, "validation_started")
-            validation = validate_output(plan, temporary, diagnostic, cancel)
+            emit_progress(emit, "validate", state="started")
+            try:
+                validation = validate_output(plan, temporary, diagnostic, cancel)
+            except Exception:
+                _emit(emit, "diagnostic.error", native_output=diagnostic_tail(diagnostic))
+                raise
+            emit_progress(emit, "validate", state="completed")
         if _cancelled(cancel):
             raise ProcessingCancelled("Processing cancelled before publication.")
         _check_source(plan)
+        emit_progress(emit, "publish", state="started")
         report = {"schema_version": 1, "status": "complete", "plan": to_dict(plan),
                   "command": command, "validation": validation, "warnings": warnings,
-                  "output_path": str(output), "diagnostic_log": str(raw_log),
+                  "output_path": str(output),
                   "elapsed_seconds": time.perf_counter() - started,
                   "analysis_elapsed_seconds": plan.analysis.metadata.get("elapsed_seconds"),
                   "bytes": temporary.stat().st_size}
-        temporary_report.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        _publish(temporary_report, report_path)
-        report_published = True
         _publish(temporary, output)
-        output_published = True
-        result = Result(output, report_path, report["bytes"], validation["duration_seconds"], report)
-        _emit(emit, "processing_completed", output_path=str(output), report_path=str(report_path),
-              bytes=result.bytes, duration_seconds=result.duration_seconds)
+        result = Result(output, None, report["bytes"], validation["duration_seconds"], report)
+        emit_progress(emit, "publish", state="completed")
+        _emit(emit, "processing_completed", output_path=str(output), report=report,
+              bytes=result.bytes, duration_seconds=result.duration_seconds,
+              validation=validation, elapsed_seconds=report["elapsed_seconds"])
         return result
-    except BaseException:
-        if report_published and not output_published:
-            report_path.unlink(missing_ok=True)
-        raise
     finally:
         temporary.unlink(missing_ok=True)
-        temporary_report.unlink(missing_ok=True)
 
 
 def process(plan, on_event=None, cancel=None):

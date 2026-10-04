@@ -97,3 +97,15 @@ git -c safe.directory=D:/work/my_prjects/analog-fpv-compressor status
 После добавления batch/naming/split выполнен `pip install -e .`:
 локальная команда теперь использует исходники 0.2.0. Python/NumPy/FFmpeg
 не менялись. Опубликованный ZIP и тег 0.1.0 остаются прежними.
+
+## Локальный GUI 0.3.0
+
+В `.venv` установлен extra через `pip install -e ".[gui]"`.
+PySide6, PySide6_Essentials, PySide6_Addons и shiboken6 — 6.11.2.
+`pip check` прошёл. Доступен `.venv\Scripts\fpv-compress-gui.exe`;
+CLI также обновлён до 0.3.0. Python/NumPy/FFmpeg не менялись.
+Qt SDK/Designer отдельно не устанавливались.
+
+Для ZIP 0.3.0 CLI и GUI собираются вместе с общей средой. Проверен запуск
+распакованного архива без `.venv` и без Python/FFmpeg в PATH. PATH сборщика
+изолирован: исключена ошибочно найденная ICU от внешнего Poppler.

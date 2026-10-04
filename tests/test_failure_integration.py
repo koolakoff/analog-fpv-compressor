@@ -63,7 +63,7 @@ class FailureIntegrationTests(unittest.TestCase):
         kept = self.cli(source, output, "--cut-no-signal", "off", "--preset", "8")
         self.assertEqual(kept.returncode, 0, kept.stderr)
         self.assertTrue(output.exists())
-        self.assertTrue(Path(str(output) + ".report.json").exists())
+        self.assertFalse(Path(str(output) + ".report.json").exists())
 
     def test_empty_and_corrupt_inputs_are_rejected(self):
         for label, content in (("empty", b""), ("corrupt", b"RIFF\x80\x00\x00\x00AVI LISTbroken-media-data")):

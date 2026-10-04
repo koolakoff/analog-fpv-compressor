@@ -40,11 +40,9 @@ def expand_inputs(specifications):
 
 
 def destination_paths(settings):
-    """Return all deterministic files reserved by a job, including its event log."""
+    """Return media paths; the application session owns all diagnostics."""
     output = Path(settings.output_path).resolve()
-    report = Path(settings.report_path or str(output) + ".report.json").resolve()
-    log = Path(settings.log_path or str(output) + ".log").resolve()
-    return (output, report, log, Path(str(log) + ".jsonl"))
+    return (output,)
 
 
 def validate_jobs(jobs, protected_paths=()):
@@ -93,8 +91,6 @@ def make_jobs(specifications, *, output_path=None, output_dir=None, output_suffi
         output = Path(output_path).expanduser().resolve() if output_path is not None else (
             (directory or source.parent) / (source.stem + suffix + "." + extension))
         requested = dict(options)
-        requested["report_path"] = requested.get("report_path") or Path(str(output) + ".report.json")
-        requested["log_path"] = requested.get("log_path") or Path(str(output) + ".log")
         jobs.append(Settings(source, output, **requested))
     # Explicit --output-dir authorizes creation; explicit --output retains the
     # existing single-file rule that its parent must already exist.
@@ -124,10 +120,9 @@ def plan_outputs(plan, split_flights=False):
         base = Path(plan.settings.output_path)
         output = base.with_name(f"{base.stem}_{index}{base.suffix}")
         settings = replace(plan.settings, output_path=output,
-                           report_path=Path(str(output) + ".report.json"), log_path=Path(str(output) + ".log"))
+                           report_path=None, log_path=None)
         reasons = {**plan.reasons, "split_flights": {
             "index": index, "count": len(intervals), "source_interval": [start, end],
-            "summary_report": str(plan.settings.report_path or str(base) + ".report.json"),
             "other_useful_intervals": "Written to separate numbered outputs, not classified as noise",
             "empty_intervals_skipped": len(plan.keep_intervals) - len(intervals)}}
         plans.append(replace(plan, settings=settings, keep_intervals=((start, end),),

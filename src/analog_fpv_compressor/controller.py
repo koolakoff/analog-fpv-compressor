@@ -15,6 +15,7 @@ import numpy as np
 
 from .detection import POLICY_VERSION, complement, snow_intervals
 from .models import Analysis, Event, Plan
+from .progress import emit_progress
 from .runtime import capture, check_cancel, discover_tools
 
 
@@ -132,7 +133,9 @@ def frame_metrics(source, times, tools, cancel=None, emit=None, stream_index=0):
     reader.start()
     errors.start()
     rows, previous = [], None
+    last_progress = time.monotonic()
     try:
+        emit_progress(emit, "snow", 0, len(times), state="started", unit="frames")
         while True:
             check_cancel(cancel)
             try:
@@ -154,12 +157,15 @@ def frame_metrics(source, times, tools, cancel=None, emit=None, stream_index=0):
                 corr = float((p * q).sum() / norm) if norm > 1e-6 else 0.0
             rows.append((mean, std, float(coarse.std()), mad, corr))
             previous = frame
-            if len(rows) % 500 == 0:
+            if len(rows) % 500 == 0 or time.monotonic() - last_progress >= .5:
                 emit_event(emit, "analysis_progress", frames=len(rows), total_frames=len(times))
+                emit_progress(emit, "snow", len(rows), len(times), unit="frames")
+                last_progress = time.monotonic()
         process.wait()
         errors.join()
         if process.returncode or len(rows) != len(times) or "Error" in "".join(diagnostics):
             raise RuntimeError(f"Snow analysis decode failed: {''.join(diagnostics)[-2000:]}")
+        emit_progress(emit, "snow", len(rows), len(times), state="completed", unit="frames")
     finally:
         stopped.set()
         if process.poll() is None:
@@ -219,6 +225,7 @@ def analyze(settings, emit=None, cancel=None):
     """Probe native timestamps and run only requested auto-analysis stages."""
     started = time.perf_counter()
     validate_settings(settings)
+    emit_progress(emit, "prepare", state="started")
     tools = discover_tools(settings.ffmpeg_dir)
     encoder = "libsvtav1" if settings.codec == "av1" else "libx265"
     available_encoders = capture([tools["ffmpeg"], "-hide_banner", "-encoders"], cancel)[0].decode("utf-8", errors="replace")
@@ -235,7 +242,9 @@ def analyze(settings, emit=None, cancel=None):
     if any(not re.search(rf"\b{f}\b", available_filters) for f in required_filters):
         raise ValueError("FFmpeg is missing required analysis/processing filters")
     source = Path(settings.input_path).resolve()
+    emit_progress(emit, "prepare", state="completed")
     emit_event(emit, "analysis_started", input=str(source))
+    emit_progress(emit, "probe", state="started")
     command = [tools["ffprobe"], "-v", "error", "-show_streams", "-show_format", "-of", "json", str(source)]
     raw, _ = capture(command, cancel)
     probe = json.loads(raw)
@@ -264,6 +273,7 @@ def analyze(settings, emit=None, cancel=None):
     timestamps = tuple(float(p * tick) for p in pts)
     if any(b <= a for a, b in zip(pts, pts[1:])):
         raise ValueError("Input video timestamps must strictly increase; repair the source before processing")
+    emit_progress(emit, "probe", state="completed")
     try:
         cadence = Fraction(video.get("avg_frame_rate", "0/1"))
     except (ZeroDivisionError, ValueError):
@@ -290,7 +300,9 @@ def analyze(settings, emit=None, cancel=None):
     kept = complement(cuts, metadata["source_start"], duration)
     fields = {"decision": "not_run", "samples": [], "field_order": "auto"}
     if settings.deinterlace == "auto":
+        emit_progress(emit, "interlace", state="started")
         fields = interlace_analysis(source, kept, tools, cancel, video["index"])
+        emit_progress(emit, "interlace", state="completed")
         if fields["decision"] == "unknown":
             warnings.append("Interlace classification is uncertain; auto preserves frames without deinterlace")
     emit_event(emit, "analysis_completed", frames=len(pts), removed_intervals=cuts, interlace=fields["decision"])

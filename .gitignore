@@ -3,6 +3,8 @@ examples/*
 !examples/README.md
 outputs/
 benchmarks/results/
+fpv-compress.log
+*.lnk
 *.avi
 *.AVI
 *.mp4

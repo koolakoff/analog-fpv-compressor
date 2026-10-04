@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import argparse
 import hashlib
 import json
+from log_reports import read_report
 import os
 from pathlib import Path
 import subprocess
@@ -141,12 +142,13 @@ def main():
     for name, clip_name, options, mode in variants:
         output = destination / f"{name}.mkv"
         record, completed = run(name, [sys.executable, "-m", "analog_fpv_compressor", "-i", summary["clips"][clip_name]["path"],
-                                      "-o", str(output), *base, *mode, *options])
+                                      "-o", str(output), "--no-split-flights", "--log-file", str(output) + ".session.log", *base, *mode, *options])
         report_path = Path(str(output) + ".report.json")
         record["output_exists"] = output.exists()
         record["events"] = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
-        if report_path.exists():
-            record["report"] = json.loads(report_path.read_text(encoding="utf-8"))
+        measured = read_report(report_path)
+        if measured is not None:
+            record["report"] = measured
         if output.exists():
             record["bytes"] = output.stat().st_size
         record["checks"] = {}
@@ -171,7 +173,7 @@ def main():
             if name == "gray-default":
                 record["checks"]["defaults_selected"] = selected["crf"] == 48 and selected["preset"] == 6 and selected["denoise_level"] == "medium" and selected["audio"] == "remove"
         record["expected_exit_code"] = 0
-        record["passed"] = completed.returncode == 0 and report_path.exists() and all(record["checks"].values()) and (not output.exists() if "--analyze-only" in options else output.exists())
+        record["passed"] = completed.returncode == 0 and measured is not None and all(record["checks"].values()) and (not output.exists() if "--analyze-only" in options else output.exists())
         summary["cases"][name] = record
         (destination / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 

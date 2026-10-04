@@ -5,10 +5,11 @@ import json
 from pathlib import Path
 
 from validate_batch import ROOT, packets
+from log_reports import read_report as load_report
 
 
-def read_report(path):
-    report = json.loads(path.read_text(encoding="utf-8"))
+def read_report(path, log_path=None):
+    report = load_report(path, log_path)
     if report["status"] != "complete":
         raise RuntimeError(f"Incomplete report: {path}")
     return report
@@ -25,7 +26,7 @@ def main():
                         ("air-school-stadion-with-termination", "termination"),
                         ("home-other-helmet", "home")):
         output = directory / "defaults" / (stem + "_converted.mkv")
-        report = read_report(Path(str(output) + ".report.json"))
+        report = read_report(Path(str(output) + ".report.json"), directory / "batch-defaults.session.log")
         validation = report["validation"]
         ffmpeg = report["plan"]["analysis"]["tools"]["ffmpeg"]
         digest = packets(output, ffmpeg)
@@ -39,10 +40,11 @@ def main():
             continue
         folder = "termination-flights" if short == "termination" else args.home_directory
         extension = "mkv" if short == "termination" else "mp4"
-        summary = read_report(directory / folder / (stem + "_converted." + extension + ".report.json"))
+        session = directory / (short + "-split.session.log")
+        summary = read_report(directory / folder / (stem + "_converted." + extension + ".report.json"), session)
         parts = []
         for item in summary["outputs"]:
-            part = read_report(Path(item["report_path"]))
+            part = read_report(Path(item.get("report_path", item["output_path"] + ".report.json")), session)
             if not part["validation"]["full_decode_passed"]:
                 raise RuntimeError(f"Decode failed: {item['output_path']}")
             parts.append({"name": Path(item["output_path"]).name, "bytes": part["bytes"],

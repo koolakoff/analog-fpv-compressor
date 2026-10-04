@@ -1,9 +1,11 @@
-analog-fpv-compressor @VERSION@ - Windows x64 console application
+analog-fpv-compressor @VERSION@ - Windows x64 GUI + CLI
 
 Extract the WHOLE ZIP to a writable directory. Keep _internal next to the EXE.
 Python, pip and NumPy do not need to be installed on the user's computer.
-This is a console application; run it in PowerShell or Windows Terminal.
-Target: Windows 10/11 x64. GUI and installer are not included in this release.
+Double-click fpv-compress-gui.exe for the graphical interface, or run
+fpv-compress.exe in PowerShell/Windows Terminal for the console interface.
+Target: Windows 10/11 x64. This is a ZIP archive; no application installer.
+Qt/PySide6 are bundled. See licenses/, sources/ and THIRD-PARTY-NOTICES.md.
 
 FFmpeg is a separate prerequisite and is NOT redistributed in this ZIP.
 If FFmpeg is not installed, run setup-ffmpeg.cmd once (internet required).
@@ -27,26 +29,34 @@ Batch inputs and automatic naming:
   .\fpv-compress.exe -i "first.avi" "second.avi" --output-suffix "_small"
   .\fpv-compress.exe -i "flight.avi" --split-flights
 
-Without -o: INPUT_STEM_converted.mkv beside the input, or in --output-dir.
+Without -o: INPUT_STEM_converted_1.mkv etc. beside the input, or in --output-dir.
 Use --output-suffix to replace _converted, and --format mkv|mp4.
 --split-flights produces INPUT_STEM_converted_1.mkv, _2.mkv, etc.
+This is the default. Use --no-split-flights to join useful intervals, or
+--cut-no-signal off to keep snow and disable automatic splitting.
 Only confirmed snow separates parts; brief interference and blue screens do not.
 Each retained interval becomes a file, including brief useful signal returns.
 Quoted globs are expanded by the program. Duplicate paths are processed once.
---output-dir is created if needed. -o, --report and --log-file accept one input.
+--output-dir is created if needed. -o accepts one input.
+--log-file selects the shared session log, including multi-file batches.
 --split-flights conflicts with --cut-no-signal off.
 
 Default: AV1 CRF 48/preset 6, medium HQDN3D, original resolution,
 automatic deinterlace analysis, conservative snow cutting, audio removal.
 Blue screens are not automatically cut. Multiple inputs are processed sequentially.
-The output directory must exist. Existing outputs/reports/logs are not overwritten.
+The output directory must exist unless --output-dir is used. Existing outputs are not overwritten.
 Cancel with Ctrl+C. Source files are never modified.
 An individual input failure does not stop the remaining batch; exit code is 1
 if any input fails. Cancellation stops the entire batch, with exit code 130.
-Completed outputs remain. Split mode also writes a summary next to the base name.
+Completed outputs remain. Split mode records its summary in the session log.
 
-Reports and English logs are written next to the output video:
-  OUTPUT.report.json, OUTPUT.log, OUTPUT.log.jsonl and an FFmpeg diagnostic log.
+No JSON reports are written next to the output video. Plans, checks and split
+summaries are recorded in the session log, also in --analyze-only mode.
+One English diagnostic file, fpv-compress.log, is written next to the executable.
+It is overwritten on the next program launch. Send a copy for troubleshooting
+before launching again. It records settings, decisions, job results and errors,
+without per-frame progress or separate FFmpeg logs. The program folder must be
+writable, or use --log-file to choose another writable location.
 
 Application code: MIT, see LICENSE. Bundled runtime licenses: licenses/.
 THIRD-PARTY-NOTICES.md describes the scope of the licenses.

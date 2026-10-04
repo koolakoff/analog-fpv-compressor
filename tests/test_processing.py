@@ -78,6 +78,23 @@ class MappingTests(unittest.TestCase):
         finally:
             timer.cancel()
 
+    def test_failures_do_not_claim_stage_or_job_completion(self):
+        for failed_stage in ("encode", "validate"):
+            with self.subTest(stage=failed_stage), tempfile.TemporaryDirectory() as directory:
+                source = Path(directory) / "source.avi"
+                source.write_bytes(b"fixture")
+                plan = make_plan(source, Path(directory) / "output.mkv", {"ffmpeg": "ffmpeg"})
+                events = []
+                failure = ProcessingError("Expected stage failure")
+                with patch("analog_fpv_compressor.processing._run", side_effect=failure if failed_stage == "encode" else None), \
+                     patch("analog_fpv_compressor.processing.validate_output", side_effect=failure):
+                    with self.assertRaises(ProcessingError):
+                        execute(plan, emit=events.append)
+                self.assertFalse(plan.settings.output_path.exists())
+                self.assertFalse(any(event.code == "processing_completed" for event in events))
+                self.assertFalse(any(event.code == "progress" and event.data["stage"] == failed_stage
+                                     and event.data["state"] == "completed" for event in events))
+
 
 class FFmpegIntegrationTests(unittest.TestCase):
     @classmethod
@@ -114,11 +131,20 @@ class FFmpegIntegrationTests(unittest.TestCase):
         self.assertEqual(validation["audio"]["decoded_samples"], 7840)
         self.assertLess(validation["maximum_timestamp_error_seconds"], .0011)
         self.assertTrue(result.output_path.exists())
-        self.assertTrue(result.report_path.exists())
+        self.assertIsNone(result.report_path)
+        self.assertFalse(Path(str(result.output_path) + ".report.json").exists())
 
     def test_progressive_no_audio_and_no_overwrite(self):
         plan = self.plan("cut silent.mkv")
-        result = execute(plan)
+        events = []
+        result = execute(plan, emit=events.append)
+        transitions = [(event.data["stage"], event.data["state"]) for event in events
+                       if event.code == "progress" and event.data["state"] != "running"]
+        self.assertEqual(transitions, [(stage, state) for stage in ("encode", "validate", "publish")
+                                       for state in ("started", "completed")])
+        self.assertTrue(all(event.data["fraction"] is None for event in events
+                            if event.code == "progress" and event.data["stage"] == "validate"))
+        self.assertEqual(events[-1].code, "processing_completed")
         self.assertIsNone(result.report["validation"]["audio"])
         with self.assertRaises(ProcessingError):
             execute(plan)

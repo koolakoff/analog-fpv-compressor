@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from log_reports import read_report
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "outputs/cli-validation"
@@ -21,7 +22,8 @@ SAMPLES = {
 def run_job(name, source, options):
     """Run only through the user-facing CLI and persist its command and streams."""
     output = RESULTS / f"{name}.mkv"
-    command = [sys.executable, "-m", "analog_fpv_compressor", "-i", str(source), "-o", str(output), *options]
+    command = [sys.executable, "-m", "analog_fpv_compressor", "-i", str(source), "-o", str(output),
+               "--no-split-flights", "--log-file", str(output) + ".session.log", *options]
     environment = dict(os.environ, PYTHONPATH=str(ROOT / "src"))
     started = time.perf_counter()
     with (RESULTS / f"{name}.console.log").open("x", encoding="utf-8") as log:
@@ -31,7 +33,7 @@ def run_job(name, source, options):
     (RESULTS / f"{name}.invocation.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     if result.returncode:
         raise RuntimeError(f"CLI failed: {name}; see its console log")
-    report = json.loads(Path(str(output) + ".report.json").read_text(encoding="utf-8"))
+    report = read_report(Path(str(output) + ".report.json"))
     record.update(bytes=report["bytes"], selected=report["plan"]["selected"],
                   keep_intervals=report["plan"]["keep_intervals"],
                   removed_intervals=report["plan"]["removed_intervals"], validation=report["validation"])
@@ -62,7 +64,7 @@ def main():
         elif args.suite == "explicit":
             record = run_job(f"{name}-explicit", source, ["--crf", "48", "--preset", "6", "--denoise", "medium",
                                                          "--scale", "original", "--deinterlace", "off"])
-            baseline = json.loads((RESULTS / f"{name}-defaults.mkv.report.json").read_text(encoding="utf-8"))
+            baseline = read_report(RESULTS / f"{name}-defaults.mkv.report.json")
             ffmpeg = baseline["plan"]["analysis"]["tools"]["ffmpeg"]
             record["defaults_video_packet_sha256"] = packet_digest(RESULTS / f"{name}-defaults.mkv", ffmpeg)
             record["explicit_video_packet_sha256"] = packet_digest(RESULTS / f"{name}-explicit.mkv", ffmpeg)

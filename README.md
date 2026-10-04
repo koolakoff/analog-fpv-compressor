@@ -1,153 +1,169 @@
+Translations: [Русский](docs/README_RU.md) · [Українська](docs/README_UK.md) · [Slovenčina](docs/README_SK.md)
+
 # analog-fpv-compressor
 
-Программа для сжатия DVR-записей с аналоговых FPV-дронов. Цель — максимально
-уменьшить размер файла, сохранив понятность движения дрона, геометрию сцены
-и видимые препятствия. Мелкие текстуры и визуальная красота вторичны.
+Compress DVR recordings from analog FPV drones while preserving understandable
+drone movement, scene geometry and visible obstacles. Fine textures and visual
+beauty are secondary to a compact file and useful flight information.
 
-Программа подавляет шум, вырезает подтверждённые длительные участки белого
-шума и перекодирует видео. Настройки можно оставить автоматическими или
-изменить вручную. Исходный файл сохраняется.
+The program reduces noise, removes confirmed long stretches of white noise and
+encodes the useful video. Original files are preserved. Settings can be automatic
+or selected manually. **By default, white noise is removed and the retained
+flights are written to separate numbered files. Audio is removed by default.**
 
-Сейчас доступны Python-ядро и консольный интерфейс. В исходниках **0.2.0**
-добавлены несколько входных файлов, автоматические выходные имена и разделение
-по снегу. Опубликованный Windows ZIP **0.1.0** обрабатывает один файл и требует
-`-o`; новые возможности пока доступны при запуске из исходников. GUI,
-склейка входных файлов и инсталлер планируются позже.
+The creator of this program is the author of [this YouTube channel about FPV drones](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 
-## Быстрый старт
+Current source version **0.3.0** includes a Python core, CLI and graphical UI,
+batch processing, automatic output names and snow-based splitting. Windows ZIP
+**0.3.0** contains both GUI and CLI with Python and Qt included.
+Joining multiple input
+files and a dedicated application installer remain future work.
 
-1. Скачать ZIP для Windows x64 из [GitHub Releases](https://github.com/koolakoff/analog-fpv-compressor/releases).
-2. Распаковать **всю папку**, сохранив `_internal/` рядом с `fpv-compress.exe`.
-3. **FFmpeg в ZIP не включён.** Если совместимая full-сборка ещё не установлена,
-   запустить приложенный `setup-ffmpeg.cmd`: он скачает и установит FFmpeg
-   через WinGet. Для этого нужен интернет. Если FFmpeg уже установлен через
-   WinGet, повторная установка не требуется.
-4. Открыть PowerShell в распакованной папке и выполнить:
+## Graphical interface
+
+In a prepared local environment, run:
+
+```powershell
+.\.venv\Scripts\fpv-compress-gui.exe
+```
+
+For a new environment, see [GUI installation](docs/README-engineering.md#установка-gui).
+FFmpeg is required for both interfaces. In the release ZIP, double-click
+`fpv-compress-gui.exe`; no Python installation is needed. A local `fpv-compress.lnk` shortcut is
+also available after running the shortcut script described in the engineering guide.
+
+![Graphical interface: file queue and processing settings](docs/images/gui-en.png)
+
+1. Click **Add files…** or drop videos into the window. Duplicate inputs are skipped.
+2. Choose the output folder, filename suffix and container if needed.
+3. Keep automatic settings or adjust noise reduction, resolution and white noise.
+4. Click **Start processing**. Inputs are processed sequentially and independently.
+
+The language selector is at the top right. On first launch, the UI uses the system
+language if it is English, Russian, Ukrainian or Slovak; otherwise it uses English.
+A manual selection is remembered. Switching languages does not interrupt processing.
+Processing settings are locked while a job runs.
+
+| Field or control | Purpose |
+|---|---|
+| Add files / remove selected | Manage the queue; drag and drop is also supported. |
+| Language | English, Русский, Українська or Slovenčina. |
+| Save to / folder | Beside each input, or in a shared output folder. |
+| Filename suffix / format | Defaults: `_converted` and MKV; MP4 is available. Split outputs also receive a part number. |
+| Noise reduction | Auto, off, weak, medium or strong. Off excludes the filter and reduces processing work. |
+| Resolution / custom resolution | Auto, original or a selected width and height; affects detail and output size. |
+| White noise | Default: remove and split into files. Alternatives: remove and join useful parts, or keep noise. |
+| Keep audio | Off by default; when enabled, audio follows the same cuts as video. |
+| Advanced settings | Reveal the following options; automatic values usually suffice. |
+| Codec | AV1 by default; HEVC is an alternative. |
+| Rate control / CRF / bitrate | Auto, CRF or a target bitrate. Lower CRF preserves more detail and produces a larger file. Bitrate is in bits/s, e.g. `500k`. |
+| Encoder preset | Speed/compression tradeoff: `auto`, AV1 0–13 or an HEVC preset name. |
+| Deinterlace / field order | Auto, off or on; auto, TFF or BFF field order for interlaced recordings. |
+| Minimum white-noise duration | `auto` or confirmation time in seconds; brief interference should not split a flight. |
+| CPU threads | Requested processing thread budget; default 4. |
+| FFmpeg folder | Leave blank for automatic discovery, or choose a folder containing `ffmpeg.exe` and `ffprobe.exe`. |
+| Analyze only | Record the plan, intervals and output names in the session log without encoding video. |
+| Start / stop | Process the queue or cancel the current job; completed outputs remain. |
+| Processing log / open log | Short messages in the window, or the complete diagnostic log of the current launch. |
+
+Progress refers to the current stage and part. Reading and validation may show an
+indeterminate indicator. **Ready** appears only after output validation. The queue
+shows output size and savings; split parts appear as child rows. Select a result
+or part to open it or its folder. Diagnostic details remain in English.
+
+## Console usage
+
+With a source installation, specifying inputs is enough:
+
+```powershell
+.\.venv\Scripts\fpv-compress.exe -i "C:\Videos\my.avi"
+.\.venv\Scripts\fpv-compress.exe -i "first.avi" "second.avi"
+.\.venv\Scripts\fpv-compress.exe -i "C:\Videos\*.avi" --output-dir "converted" --format mp4
+.\.venv\Scripts\fpv-compress.exe -i "*.avi" --output-dir "converted" --output-suffix "_small"
+```
+
+The default outputs are `my_converted_1.mkv`, `_2.mkv`, etc., beside the input.
+`--output-dir` selects a shared folder and creates it if necessary;
+`--output-suffix` replaces `_converted`; `--format mp4` selects MP4.
+The program expands wildcard patterns, so quoting them works across shells.
+Repeated `-i` is supported and identical input paths are processed once.
+
+`--split-flights` is enabled by default. Every nonempty retained interval gets a
+numbered output, including a brief return of useful video. This detects snow
+boundaries, not takeoff or landing: a long signal loss during a flight can split it.
+Leading/trailing snow does not create empty files; one useful part still gets `_1`.
+Blue screens and brief unconfirmed interference do not create split boundaries.
+
+```powershell
+# Remove snow but join useful intervals into one file:
+.\.venv\Scripts\fpv-compress.exe -i "my.avi" --no-split-flights
+# Keep snow and disable automatic splitting:
+.\.venv\Scripts\fpv-compress.exe -i "my.avi" --cut-no-signal off
+# Inspect the plan in the log without creating video:
+.\.venv\Scripts\fpv-compress.exe -i "my.avi" --analyze-only
+# Select explicit processing settings:
+.\.venv\Scripts\fpv-compress.exe -i "my.avi" --denoise off --scale 480x360 --audio keep
+```
+
+`--no-signal-min-duration` controls snow confirmation time. `--audio keep` keeps
+synchronized audio: FLAC in MKV, AAC in MP4. Explicit CRF and bitrate cannot be
+set together. Deinterlace supports `auto`, `off`, `on`; field order supports
+`auto`, `tff`, `bff`. See `--help` for all options.
+
+`-o` accepts one input and cannot be combined with `--output-dir` or
+`--output-suffix`; in split mode it sets the base filename. Explicit
+`--split-flights` conflicts with `--cut-no-signal off`. Existing outputs and
+colliding names are rejected. Choose a new output name for another run.
+
+## Windows ZIP 0.3.0
+
+1. Download the Windows x64 ZIP from [GitHub Releases](https://github.com/koolakoff/analog-fpv-compressor/releases).
+2. Extract the entire folder; keep `_internal/` beside `fpv-compress.exe`.
+3. **FFmpeg is not bundled.** If a compatible full build is missing, run
+   `setup-ffmpeg.cmd`: it downloads and installs FFmpeg through WinGet and needs
+   internet access. An existing full WinGet installation is detected automatically.
+4. Double-click `fpv-compress-gui.exe` for the GUI, or open PowerShell for CLI:
 
 ```powershell
 .\fpv-compress.exe -i "C:\Videos\flight.avi" -o "C:\Videos\flight-small.mkv"
 ```
 
-ZIP рассчитан на Windows 10/11 x64. Python и NumPy включены.
-Если WinGet недоступен, скачать [full-сборку FFmpeg](https://www.gyan.dev/ffmpeg/builds/)
-вручную и положить `ffmpeg.exe` и `ffprobe.exe` в `tools/` рядом с нашей
-программой. Essentials-сборка не подходит для AV1 по умолчанию.
-Для другой существующей установки можно задать `--ffmpeg-dir "C:\path\to\bin"`.
-Установка из исходников и запуск разработки описаны в
-[инженерном README](docs/README-engineering.md).
+This release targets Windows 10/11 x64 and includes Python, NumPy and Qt/PySide6.
+If WinGet is unavailable, download a [full FFmpeg build](https://www.gyan.dev/ffmpeg/builds/)
+and place `ffmpeg.exe` and `ffprobe.exe` in `tools/` beside the program.
+The essentials build lacks the default AV1 encoder. Use `--ffmpeg-dir` for another
+installation. Keep the entire folder together; create a Windows shortcut to the
+GUI executable if desired. `licenses/` and `sources/` contain third-party license
+materials and corresponding Qt sources; they require no installation.
 
-## Настройки и примеры
+## Results and diagnostics
 
-Явное имя результата работает как в ZIP 0.1.0, так и в текущих исходниках:
+The current program writes one **`fpv-compress.log` beside the launcher**, or
+beside the environment's Python executable when run with `python -m`.
+For local development: `.venv\Scripts\fpv-compress.log`.
+**Each new program launch overwrites it.** Multiple queues within the same GUI
+window append to that same file. The program folder must be writable;
+CLI `--log-file PATH` selects another location, including for multi-file batches.
 
-```powershell
-.\fpv-compress.exe -i "input.avi" -o "output.mkv"
-```
+The log records versions, requested and automatic settings with reasons, removed
+source intervals, processing start/end, validation, results and errors. It keeps
+no per-frame progress and creates no separate FFmpeg logs. **No JSON reports are
+created beside videos**, including in analyze-only and split modes. Plans and
+checks are included in the main log. `--events-jsonl` enables live machine events
+on stdout. Console output and diagnostic logs are in English.
 
-По умолчанию используются AV1 CRF 48/preset 6, средний HQDN3D и исходное
-разрешение. Программа автоматически проверяет необходимость deinterlace,
-осторожно вырезает длительный снег и **удаляет звук**. Синий экран автоматически
-не вырезается: внутри него могут кратковременно появляться полезные кадры.
-Это начальные настройки, проверенные на трёх DVR-записях.
+For troubleshooting, send a copy of the log before launching the program again.
+Already generated reports from earlier versions are not deleted automatically.
+One input's failure does not stop the remaining queue; CLI exit code is 1 if any
+input fails. Ctrl+C or **Stop** cancels processing, removes unfinished temporary
+files and leaves completed outputs; CLI cancellation returns 130. An input made
+entirely of snow is rejected unless noise removal is disabled.
 
-| Параметр | Назначение |
-|---|---|
-| `--scale 480x360` | Уменьшить разрешение, сохранив отображаемые пропорции |
-| `--denoise auto\|off\|weak\|medium\|strong` | Выбрать степень шумоподавления или отключить его |
-| `--deinterlace auto\|off\|on` | Автоматический выбор либо ручное управление deinterlace |
-| `--cut-no-signal auto\|off` | Автоматически вырезать снег либо оставить его |
-| `--no-signal-min-duration SECONDS` | Задать минимальную длительность для подтверждения снега |
-| `--audio keep` | Сохранить звук; по умолчанию удаляется |
-| `--crf N` | Задать качество: большее число усиливает сжатие и потери деталей |
-| `--bitrate 500k` | Задать целевой видеобитрейт вместо ручного CRF |
-| `--codec hevc --preset medium` | Использовать HEVC вместо AV1 |
-| `--analyze-only` | Сохранить план и отчёт без создания видео |
+## Further information
 
-Компактный вариант, сохранение звука и отключение дополнительных этапов:
+- [Engineering guide: installation, development environment, API, checks and releases](docs/README-engineering.md).
+- [Current requirements and decisions](docs/source-of-truth.md).
+- [Version 1 plan](docs/plan-v1.md).
+- [DVR measurements](docs/research/cli-validation-2026-10-04.md), [batch checks](docs/research/batch-validation-2026-10-04.md), [GUI checks](docs/research/gui-validation-2026-10-04.md).
 
-```powershell
-.\fpv-compress.exe -i "input.avi" -o "compact.mkv" --scale 480x360
-.\fpv-compress.exe -i "input.avi" -o "with-audio.mp4" --audio keep
-.\fpv-compress.exe -i "input.avi" -o "no-filters.mkv" --denoise off --deinterlace off --cut-no-signal off
-.\fpv-compress.exe -i "input.avi" -o "plan.mkv" --analyze-only
-.\fpv-compress.exe --help
-```
-
-Поддержаны MKV и MP4. При сохранении звука используется FLAC для MKV и AAC
-для MP4; вырезание синхронно применяется к видео и аудио. Явные CRF и bitrate
-одновременно задавать нельзя. Все параметры перечислены в `--help`.
-
-## Несколько файлов и разделение по полётам — 0.2.0
-
-После установки из исходников использовать локальную команду
-`.\.venv\Scripts\fpv-compress.exe`. Теперь достаточно указать только вход:
-
-```powershell
-.\.venv\Scripts\fpv-compress.exe -i "C:\Videos\my.avi"
-```
-
-Получится `C:\Videos\my_converted.mkv`. Без `--output-dir` каждый результат
-лежит рядом со своим входом. Default — MKV; `--format mp4` выбирает MP4.
-
-```powershell
-.\.venv\Scripts\fpv-compress.exe -i "first.avi" "second.avi"
-.\.venv\Scripts\fpv-compress.exe -i "C:\Videos\*.avi" --output-dir "converted" --format mp4
-.\.venv\Scripts\fpv-compress.exe -i "*.avi" --output-dir "converted" --output-suffix "_small"
-.\.venv\Scripts\fpv-compress.exe -i "my.avi" --split-flights
-```
-
-`--output-dir` создаётся при необходимости. `--output-suffix` заменяет
-`_converted`; каталог и суффикс можно использовать вместе. Wildcard раскрывает
-сама программа: удобно передавать шаблон в кавычках. Несколько `-i` также
-поддерживаются. Повторно указанный файл обрабатывается один раз, файлы
-обрабатываются последовательно и независимо.
-
-`--split-flights` создаёт `my_converted_1.mkv`, `my_converted_2.mkv` и далее
-по подтверждённым промежуткам белого шума. Каждый сохраняемый участок становится
-отдельным файлом, даже краткое возвращение полезной картинки. Это не определение
-взлётов и посадок: длительная потеря сигнала внутри полёта тоже создаст границу.
-Снег в начале/конце не создаёт пустых файлов; одна полезная часть получает `_1`.
-Синий экран и краткие неподтверждённые помехи не разделяют запись.
-`--no-signal-min-duration` управляет подтверждением снега и для split.
-
-Без split сохраняемые участки склеиваются в один результат для каждого входа.
-С `--analyze-only --split-flights` можно сначала увидеть план и имена частей,
-не создавая видео. `--audio keep` сохраняет синхронный звук в каждой части.
-
-`-o`, `--report` и `--log-file` принимают только один вход. `-o` нельзя
-сочетать с `--output-dir` или `--output-suffix`; в split оно задаёт базовое имя
-для нумерации частей. `--split-flights` несовместим с `--cut-no-signal off`.
-При совпадении выходных имён, например у двух входов с одинаковым именем
-из разных папок, программа сообщает ошибку и ничего не перезаписывает.
-
-## Результат и логи
-
-Папка назначения должна существовать. Исходник и существующие результаты
-не перезаписываются; для повторного запуска выбрать новое имя результата.
-Отмена обработки — **Ctrl+C**, незавершённый временный результат удаляется.
-
-Рядом с видео сохраняются `OUTPUT.report.json`, `OUTPUT.log`, `OUTPUT.log.jsonl`
-и подробный FFmpeg log. Отчёт показывает фактические настройки и причины
-автоматического выбора, удалённые таймкоды исходного видео и проверки результата.
-Консольный вывод и логи — на английском. Пути отчёта и лога можно изменить
-через `--report` и `--log-file`; машинные события в stdout включаются
-через `--events-jsonl`.
-
-В split общий отчёт и лог сохраняются по базовому имени, а каждый готовый
-номерной файл имеет собственные отчёт и логи. Ошибка одного входа не мешает
-пакету обработать остальные; общий exit code — 1 при любой ошибке. Ctrl+C
-останавливает весь пакет с exit code 130. Уже готовые файлы сохраняются,
-незавершённые временные файлы удаляются.
-
-Если весь вход состоит из снега, автоматический режим сообщает ошибку.
-Для намеренного сохранения такого видео использовать `--cut-no-signal off`.
-
-## Дополнительная информация
-
-- [Инженерный README: установка, среда, API, проверки и выпуск релиза](docs/README-engineering.md).
-- [Источник истины: актуальные требования и решения](docs/source-of-truth.md).
-- [План первой версии](docs/plan-v1.md).
-- [Измерения и проверка программы на DVR-записях](docs/research/cli-validation-2026-10-04.md).
-- [Проверка пакетной обработки и разделения](docs/research/batch-validation-2026-10-04.md).
-
-Код проекта распространяется под [MIT](LICENSE).
+Application code is licensed under [MIT](LICENSE).

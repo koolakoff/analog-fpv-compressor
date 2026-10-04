@@ -4,15 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "analog-fpv-compressor"
-version = "0.2.0"
+version = "0.3.0"
 description = "Compress analog FPV DVR recordings while preserving useful flight information"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 dependencies = ["numpy>=2.2,<3"]
 
+[project.optional-dependencies]
+gui = ["PySide6>=6.8,<7"]
+
 [project.scripts]
 fpv-compress = "analog_fpv_compressor.cli:main"
+
+[project.gui-scripts]
+fpv-compress-gui = "analog_fpv_compressor.gui:main"
+
+[tool.setuptools.package-data]
+"analog_fpv_compressor.gui" = ["translations/*.json", "assets/*.png", "assets/*.ico"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

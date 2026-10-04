@@ -3,6 +3,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
+from log_reports import read_report
 import os
 from pathlib import Path
 import subprocess
@@ -53,13 +54,12 @@ def main():
         hashes.append([line.rsplit(",", 1)[-1].strip() for line in completed.stdout.splitlines() if line and not line.startswith("#")])
     completed = run("cli-aac", [sys.executable, "-m", "analog_fpv_compressor", "-i", str(clip), "-o", str(output),
                                 "--ffmpeg-dir", str(args.ffmpeg_bin), "--audio", "keep", "--cut-no-signal", "off",
-                                "--deinterlace", "off", "--events-jsonl"])
+                                "--deinterlace", "off", "--events-jsonl", "--log-file", str(output) + ".session.log"])
     summary = {"directory": str(destination), "source_probe": source_probe,
                "source_video_hashes_match": hashes[0] == hashes[1], "source_video_frames": len(hashes[1]),
                "cli_exit_code": completed.returncode, "output_exists": output.exists(), "report": None}
     report_path = Path(str(output) + ".report.json")
-    if report_path.exists():
-        summary["report"] = json.loads(report_path.read_text(encoding="utf-8"))
+    summary["report"] = read_report(report_path)
     if output.exists():
         completed_probe = run("probe-output", [ffprobe, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(output)])
         summary["output_probe"] = json.loads(completed_probe.stdout)

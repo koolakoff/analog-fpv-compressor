@@ -74,26 +74,54 @@ def main():
         shutil.copy2(args.ffmpeg_dir.resolve() / name, bundle / "tools" / name)
     sun_source = bundle / "sun clip.mkv"
     shutil.copy2(ROOT / "outputs/cli-edges/20261004T000755Z/sun-source.mkv", sun_source)
-    run("minimal-sun", ["-i", sun_source, "-o", bundle / "sun.mkv"])
+    run("minimal-sun", ["-i", sun_source, "-o", bundle / "sun.mkv", "--no-split-flights"])
     actual = packet_digest(bundle / "sun.mkv", bundle / "tools/ffmpeg.exe")
     reference = packet_digest(ROOT / "outputs/cli-edges/20261004T000755Z/av1-medium.mkv", bundle / "tools/ffmpeg.exe")
     if actual != reference:
         raise RuntimeError("Frozen video differs from the previous CLI sun reference")
     cases[-1]["matches_reference_video_packets"] = True
-    run("audio-mp4", ["-i", gray_source, "-o", bundle / "audio.mp4", "--audio", "keep"])
+    run("audio-mp4", ["-i", gray_source, "-o", bundle / "audio.mp4", "--audio", "keep", "--no-split-flights"])
     run("manual-hevc", ["-i", gray_source, "-o", bundle / "manual.mkv", "--codec", "hevc",
                         "--preset", "fast", "--denoise", "off", "--deinterlace", "off",
                         "--cut-no-signal", "off", "--scale", "480x360"])
     if args.full:
         run("full-oneflight", ["-i", ROOT / "examples/air-school-stadion-oneflight.AVI",
-                               "-o", bundle / "full.mkv"])
+                               "-o", bundle / "full.mkv", "--no-split-flights"])
         actual = packet_digest(bundle / "full.mkv", bundle / "tools/ffmpeg.exe")
         reference = packet_digest(ROOT / "outputs/cli-validation/oneflight-defaults.mkv", bundle / "tools/ffmpeg.exe")
         if actual != reference:
             raise RuntimeError("Frozen full recording differs from the development CLI")
         cases[-1]["matches_reference_video_packets"] = True
-    for report in bundle.glob("*.report.json"):
-        shutil.copy2(report, evidence / report.name)
+    source = bundle / "GUI test Юнікод.mkv"
+    subprocess.run([str(bundle / "tools/ffmpeg.exe"), "-v", "error", "-f", "lavfi", "-i",
+                    "testsrc2=size=160x120:rate=10:duration=1[a];color=c=gray:size=160x120:rate=10:duration=2,noise=alls=100:allf=t+u[b];testsrc2=size=160x120:rate=10:duration=1[c];[a][b][c]concat=n=3:v=1:a=0",
+                    "-c:v", "ffv1", str(source)], check=True, env=environment)
+    config = evidence / "gui-config.json"
+    config.write_text(json.dumps({"input": str(source), "output": str(bundle / "gui outputs"),
+                                 "ffmpeg_dir": str(bundle / "tools"), "evidence": str(evidence / "gui")}), encoding="utf-8")
+    subprocess.run([str(bundle / "fpv-compress-gui.exe"), "--verify-bundle", str(config)],
+                   cwd=bundle, env=environment, check=True, timeout=150)
+    gui = json.loads((evidence / "gui/gui-verification.json").read_text(encoding="utf-8"))
+    # Check native source timestamps independently of the core's frame count.
+    source_frames = json.loads(subprocess.check_output([
+        str(bundle / "tools/ffprobe.exe"), "-v", "error", "-select_streams", "v:0",
+        "-show_frames", "-show_entries", "frame=best_effort_timestamp_time", "-of", "json",
+        str(source)], env=environment))["frames"]
+    timestamps = [float(frame["best_effort_timestamp_time"]) for frame in source_frames]
+    intervals = [interval for part in gui["parts"] for interval in part["plan"]["keep_intervals"]]
+    retained = [stamp for stamp in timestamps if any(start <= stamp < end for start, end in intervals)]
+    useful = [stamp for stamp in timestamps if stamp < 1.0 or stamp >= 3.0]
+    frames = sum(part["validation"]["decoded_frames"] for part in gui["parts"])
+    if not gui["passed"] or len(gui["parts"]) != 2 or frames != len(retained) or not set(useful).issubset(retained) or not all(
+            part["validation"]["full_decode_passed"] and
+            part["validation"]["decoded_frames"] == part["validation"]["expected_frames"]
+            for part in gui["parts"]):
+        raise RuntimeError("Frozen GUI split/validation failed")
+    if list(bundle.rglob("*.report.json")):
+        raise RuntimeError("Per-output JSON reports must not be created")
+    cases.append({"name": "gui-four-languages-and-default-split", "passed": True, "frames": frames,
+                  "useful_frames": len(useful), "retained_noise_edge_frames": frames - len(useful), "parts": 2})
+    shutil.copy2(bundle / "fpv-compress.log", evidence / "session.log")
     (evidence / "summary.json").write_text(json.dumps({"archive": str(args.archive.resolve()),
         "isolated_bundle": str(bundle), "environment_path": environment["PATH"], "cases": cases,
         "ffmpeg_copied_only_for_local_testing": True}, indent=2), encoding="utf-8")

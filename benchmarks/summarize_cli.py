@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from log_reports import read_report
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -16,7 +17,7 @@ def main():
     expected.update(("oneflight-scale480", "termination-scale480"))
     rows = []
     for name in sorted(expected):
-        report = json.loads((directory / f"{name}.mkv.report.json").read_text(encoding="utf-8"))
+        report = read_report(directory / f"{name}.mkv.report.json")
         invocation = json.loads((directory / f"{name}.invocation.json").read_text(encoding="utf-8"))
         if report["status"] != "complete" or invocation["exit_code"] != 0:
             raise RuntimeError(f"Incomplete or failed job: {name}")

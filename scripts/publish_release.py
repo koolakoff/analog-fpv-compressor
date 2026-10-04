@@ -54,7 +54,7 @@ def main():
     if tag["object"]["type"] != "commit" or tag["object"]["sha"] != manifest["source_revision"]:
         raise RuntimeError("Remote lightweight tag must point to the exact archived commit")
     release = request(api + "/releases", "POST", {
-        "tag_name": args.tag, "name": args.tag + " — Windows x64 CLI",
+        "tag_name": args.tag, "name": args.tag + " — Windows x64 GUI + CLI",
         "body": args.notes.read_text(encoding="utf-8"), "draft": True,
         "prerelease": not args.stable})
     for asset in (archive, checksum):

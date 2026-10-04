@@ -28,7 +28,7 @@ class BatchIntegrationTests(unittest.TestCase):
     def cli(self, *arguments):
         return subprocess.run([sys.executable, "-m", "analog_fpv_compressor", *map(str, arguments),
                                "--ffmpeg-dir", str(Path(self.tools["ffmpeg"]).parent),
-                               "--preset", "10", "--threads", "2"], cwd=self.root,
+                               "--preset", "10", "--threads", "2", "--log-file", str(self.root / "session.log")], cwd=self.root,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
 
     def test_wildcard_two_files_without_output_and_custom_mp4_directory(self):
@@ -40,7 +40,7 @@ class BatchIntegrationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
         for source in (one, two):
             output = source.with_name(source.stem + "_converted.mkv")
-            report = json.loads(Path(str(output) + ".report.json").read_text())
+            report = self.log_data("processing_completed", output)["report"]
             self.assertEqual(report["validation"]["decoded_frames"], 10)
         result = self.cli("-i", one, two, "--output-dir", "new outputs", "--output-suffix", "_small",
                           "--format", "mp4", "--cut-no-signal", "off", "--deinterlace", "off")
@@ -57,21 +57,36 @@ class BatchIntegrationTests(unittest.TestCase):
                     "sine=frequency=500:sample_rate=8000:duration=7", "-c:v", "ffv1", "-c:a", "pcm_s16le", source)
         return source
 
+    def log_data(self, code, output=None):
+        events = [json.loads(line) for line in (self.root / "session.log").read_text(encoding="utf-8").splitlines()]
+        return next(event["data"] for event in events if event["code"] == code
+                    and (output is None or event["data"].get("output_path") == str(output)))
+
     def test_three_flights_are_independent_numbered_outputs_with_audio(self):
         source = self.snow_recording()
-        result = self.cli("-i", source, "--split-flights", "--output-dir", "flights",
+        result = self.cli("-i", source, "--output-dir", "flights",
                           "--audio", "keep", "--denoise", "off", "--deinterlace", "off")
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
-        summary_path = self.root / "flights/three flights_converted.mkv.report.json"
-        summary = json.loads(summary_path.read_text())
+        summary = self.log_data("flights.summary")
+        self.assertFalse(list((self.root / "flights").glob("*.json")))
         self.assertEqual(summary["status"], "complete")
         self.assertEqual(summary["completed_outputs"], 3)
+        events = [json.loads(line) for line in (self.root / "session.log").read_text().splitlines()]
+        self.assertFalse(list((self.root / "flights").glob("*.log*")))
+        snow = [event["data"] for event in events if event["code"] == "progress" and event["data"]["stage"] == "snow"]
+        self.assertEqual(snow[0]["fraction"], 0.)
+        self.assertEqual(snow[-1]["fraction"], 1.)
+        self.assertEqual(snow[-1]["completed"], 70)
+        encodes = [event["data"] for event in events if event["code"] == "progress"
+                   and event["data"]["stage"] == "encode" and event["data"]["state"] == "completed"]
+        self.assertEqual([event["part_index"] for event in encodes], [1, 2, 3])
+        self.assertTrue(all(event["fraction"] == 1. and event["job_index"] == 1 for event in encodes))
         self.assertFalse((self.root / "flights/three flights_converted.mkv").exists())
         total_frames = 0
         for index, item in enumerate(summary["outputs"], 1):
             output = Path(item["output_path"])
             self.assertEqual(output.name, f"three flights_converted_{index}.mkv")
-            report = json.loads(Path(item["report_path"]).read_text())
+            report = self.log_data("processing_completed", output)["report"]
             self.assertTrue(report["validation"]["full_decode_passed"])
             self.assertEqual(len(report["plan"]["keep_intervals"]), 1)
             self.assertEqual(report["plan"]["mapping"][0]["output_start"], 0.)
@@ -88,7 +103,8 @@ class BatchIntegrationTests(unittest.TestCase):
         output = self.root / "preview.mkv"
         result = self.cli("-i", source, "-o", output, "--split-flights", "--analyze-only", "--deinterlace", "off")
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
-        summary = json.loads(Path(str(output) + ".report.json").read_text())
+        summary = self.log_data("job.analyzed")["report"]
+        self.assertFalse(list(self.root.glob("*.json")))
         self.assertEqual(summary["status"], "analyzed")
         self.assertEqual(len(summary["outputs"]), 3)
         self.assertFalse(list(self.root.glob("preview*.mkv")))
@@ -107,7 +123,7 @@ class BatchIntegrationTests(unittest.TestCase):
         result = self.cli("-i", source, "--format", "mp4", "--audio", "keep",
                           "--cut-no-signal", "off", "--deinterlace", "off", "--denoise", "off")
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
-        report = json.loads((self.root / "unusual-rate_converted.mp4.report.json").read_text())
+        report = self.log_data("processing_completed")["report"]
         self.assertEqual(report["validation"]["decoded_frames"], 200)
         self.assertEqual(report["plan"]["selected"]["audio_sample_rate"], 16000)
         audio = report["validation"]["audio"]

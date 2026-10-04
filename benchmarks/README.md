@@ -104,3 +104,27 @@ home MP4 audio run was corrected and repeated in `home-flights-fixed/`:
 
 Measured results and the audio-clock regression fix:
 [batch validation](../docs/research/batch-validation-2026-10-04.md).
+
+## Desktop regression
+
+`validate_gui.py` drives the real Qt window and its shared worker on all three
+full DVR inputs, then home MP4/AAC flight splitting. It records heartbeat,
+language switching, events, media reports and screenshots, and verifies default
+video packet hashes against CLI. Install `.[gui]` first; use a fresh directory:
+
+```powershell
+.\.venv\Scripts\python.exe benchmarks/validate_gui.py --directory outputs/gui-repeat
+```
+
+The window remains hidden; it uses actual platform widgets and the Qt event loop.
+Synthetic GUI cases, cancellation, error continuation, translations and close
+cleanup are in `tests/test_gui.py`. Results:
+[GUI validation](../docs/research/gui-validation-2026-10-04.md).
+
+Current application runs store plans and validation in a session log, without
+per-output JSON files. `log_reports.py` reads that evidence and also accepts
+archived reports from older runs. Historical comparison suites explicitly select
+`--no-split-flights` to compare joined video packets with their original baselines;
+the current UI/CLI default removes snow and splits flights. Research scripts may
+keep their own invocation/summary JSON and console captures under ignored
+`outputs/`; these are research evidence, not artifacts of a normal application run.

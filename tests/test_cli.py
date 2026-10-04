@@ -10,8 +10,22 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 import analog_fpv_compressor
-from analog_fpv_compressor.cli import EventLogger, create_parser, format_timestamp, main, settings_from_args
+from analog_fpv_compressor.cli import EventLogger, create_parser, format_timestamp, main as cli_main, settings_from_args
 from analog_fpv_compressor.models import Analysis, CancelToken, Event, Plan, Settings, to_dict
+
+
+def main(argv):
+    source = Path(argv[argv.index("-i") + 1])
+    if "--log-file" not in argv:
+        argv = [*argv, "--log-file", str(source.parent / "session.log")]
+    if "--split-flights" not in argv:
+        argv = [*argv, "--no-split-flights"]
+    return cli_main(argv)
+
+
+def log_data(directory, code):
+    events = [json.loads(line) for line in (Path(directory) / "session.log").read_text(encoding="utf-8").splitlines()]
+    return next(event["data"] for event in events if event["code"] == code)
 
 
 class CliTests(unittest.TestCase):
@@ -47,13 +61,14 @@ class CliTests(unittest.TestCase):
                  patch.object(analog_fpv_compressor, "processing", SimpleNamespace(execute=execute), create=True), \
                  contextlib.redirect_stdout(stdout), \
                  contextlib.redirect_stderr(io.StringIO()):
-                code = main(["-i", *map(str, sources), "--events-jsonl"])
+                code = main(["-i", *map(str, sources), "--events-jsonl", "--log-file", str(Path(directory) / "session.log")])
             self.assertEqual(code, 1)
             self.assertEqual(calls, sources)
-            events = [json.loads(line) for line in (Path(directory) / "good_converted.mkv.log.jsonl").read_text().splitlines()]
-            self.assertEqual(events[-1]["code"], "job.completed")
-            self.assertEqual(events[-1]["data"]["job_index"], 2)
-            completed = json.loads(stdout.getvalue().splitlines()[-1])
+            events = [json.loads(line) for line in (Path(directory) / "session.log").read_text().splitlines()]
+            job = next(event for event in events if event["code"] == "job.completed")
+            self.assertEqual(job["data"]["job_index"], 2)
+            self.assertTrue(events[-1]["data"]["failed"])
+            completed = next(json.loads(line) for line in stdout.getvalue().splitlines() if json.loads(line)["code"] == "batch.completed")
             self.assertEqual(completed["code"], "batch.completed")
             self.assertEqual(completed["data"], {"inputs": 2, "succeeded": 1, "failed": 1})
             self.assertIn("timestamp", completed)
@@ -78,7 +93,6 @@ class CliTests(unittest.TestCase):
                     if len(calls) == 2:
                         raise error_type("Stopped during second part")
                     plan.settings.output_path.write_bytes(b"verified fixture")
-                    plan.settings.report_path.write_text('{}', encoding="utf-8")
                     return SimpleNamespace(output_path=plan.settings.output_path, report_path=plan.settings.report_path,
                                            bytes=16, duration_seconds=1.)
                 controller = SimpleNamespace(validate_settings=lambda settings: None, analyze=analyze, build_plan=build)
@@ -88,7 +102,7 @@ class CliTests(unittest.TestCase):
                     code = main(["-i", *map(str, sources), "--split-flights"])
                 self.assertEqual(code, expected_code)
                 self.assertEqual((Path(directory) / "first_converted_1.mkv").read_bytes(), b"verified fixture")
-                summary = json.loads((Path(directory) / "first_converted.mkv.report.json").read_text())
+                summary = log_data(directory, "flights.summary")
                 self.assertEqual(summary["completed_outputs"], 1)
                 self.assertEqual(summary["status"], "cancelled" if expected_code == 130 else "failed")
                 self.assertFalse((Path(directory) / "first_converted_3.mkv").exists())
@@ -109,7 +123,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(settings.crf, 42)
         self.assertEqual(settings.denoise, "off")
         self.assertEqual(settings.deinterlace, "auto")
-        self.assertEqual(settings.report_path, Path("output.mkv.report.json"))
+        self.assertIsNone(settings.report_path)
         self.assertEqual(to_dict(settings)["input_path"], "input α.AVI")
 
     def test_machine_events_are_json_lines_and_human_output_uses_stderr(self):
@@ -119,11 +133,13 @@ class CliTests(unittest.TestCase):
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 with EventLogger(log, True) as emit:
                     emit(Event("plan.resolved", {"removed_intervals": ((76.25, 143.75),)}))
-            event = json.loads(stdout.getvalue())
+            event = next(json.loads(line) for line in stdout.getvalue().splitlines() if json.loads(line)["code"] == "plan.resolved")
             self.assertEqual(event["schema_version"], 1)
             self.assertEqual(event["data"]["removed_intervals"], [[76.25, 143.75]])
             self.assertIn("[00:01:16.250, 00:02:23.750)", stderr.getvalue())
-            self.assertEqual(log.read_text(encoding="utf-8"), stderr.getvalue())
+            self.assertEqual([json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()],
+                             [json.loads(line) for line in stdout.getvalue().splitlines()])
+            self.assertFalse(Path(str(log) + ".jsonl").exists())
 
     def test_analyze_only_writes_plan_and_never_calls_encoder(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -143,18 +159,19 @@ class CliTests(unittest.TestCase):
                 code = main(["-i", str(input_path), "-o", str(output), "--analyze-only"])
             self.assertEqual(code, 0)
             self.assertFalse(output.exists())
-            report = json.loads(Path(str(output) + ".report.json").read_text(encoding="utf-8"))
+            report = log_data(directory, "job.analyzed")["report"]
+            self.assertFalse(list(Path(directory).glob("*.json")))
             self.assertEqual(report["status"], "analyzed")
             self.assertEqual(report["plan"]["selected"]["audio"], "remove")
 
-    def test_existing_log_is_preserved(self):
+    def test_existing_log_is_overwritten_on_launch(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "existing.log"
             path.write_text("keep this", encoding="utf-8")
-            with self.assertRaises(FileExistsError):
-                with EventLogger(path):
-                    self.fail("Existing log opened")
-            self.assertEqual(path.read_text(encoding="utf-8"), "keep this")
+            with EventLogger(path, echo=False):
+                pass
+            self.assertNotIn("keep this", path.read_text(encoding="utf-8"))
+            self.assertEqual(len(path.read_text(encoding="utf-8").splitlines()), 2)
 
     def test_analysis_cancellation_exception_has_exit_code_130(self):
         from analog_fpv_compressor.runtime import CancelledError
@@ -166,21 +183,20 @@ class CliTests(unittest.TestCase):
             controller = SimpleNamespace(validate_settings=lambda settings: None, analyze=cancelled)
             with patch.object(analog_fpv_compressor, "controller", controller, create=True), \
                  contextlib.redirect_stderr(io.StringIO()):
-                code = main(["-i", str(input_path), "-o", str(output)])
+                code = main(["-i", str(input_path), "-o", str(output), "--log-file", str(Path(directory) / "session.log")])
             self.assertEqual(code, 130)
             self.assertFalse(output.exists())
-            events = [json.loads(line) for line in Path(str(output) + ".log.jsonl").read_text(encoding="utf-8").splitlines()]
-            self.assertEqual(events[-1]["code"], "job.cancelled")
+            events = [json.loads(line) for line in (Path(directory) / "session.log").read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(events[-2]["code"], "job.cancelled")
 
     def test_existing_event_log_does_not_get_removed(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "new.log"
             json_path = Path(str(path) + ".jsonl")
             json_path.write_text("keep this", encoding="utf-8")
-            with self.assertRaises(FileExistsError):
-                with EventLogger(path):
-                    self.fail("Existing event log opened")
-            self.assertFalse(path.exists())
+            with EventLogger(path, echo=False):
+                pass
+            self.assertTrue(path.exists())
             self.assertEqual(json_path.read_text(encoding="utf-8"), "keep this")
 
 
