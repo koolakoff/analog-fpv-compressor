@@ -83,7 +83,7 @@ def main():
               ".\\.venv\\Scripts\\python.exe benchmarks/summarize_cli.py --directory outputs/cli-repeat",
               "```", "", "Choose a fresh directory: existing results are never overwritten. Run tests with",
               "`python -m unittest discover -s tests -v`; set `FPV_FFMPEG_BIN` if FFmpeg is absent from PATH.",
-              "Requirements/defaults: [source of truth](../source-of-truth.md). Installation: [README](../../README.md).", ""]
+              "Requirements/defaults: [source of truth](../source-of-truth.md). Installation: [engineering README](../README-engineering.md).", ""]
     (ROOT / "docs/research/cli-validation-2026-10-04.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"Published {len(rows)} verified full-file CLI results")
 

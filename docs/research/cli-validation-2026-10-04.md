@@ -76,4 +76,4 @@ general detector reliability and recognition of brief obstacles.
 
 Choose a fresh directory: existing results are never overwritten. Run tests with
 `python -m unittest discover -s tests -v`; set `FPV_FFMPEG_BIN` if FFmpeg is absent from PATH.
-Requirements/defaults: [source of truth](../source-of-truth.md). Installation: [README](../../README.md).
+Requirements/defaults: [source of truth](../source-of-truth.md). Installation: [engineering README](../README-engineering.md).
