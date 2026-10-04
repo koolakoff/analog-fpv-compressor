@@ -128,3 +128,14 @@ archived reports from older runs. Historical comparison suites explicitly select
 the current UI/CLI default removes snow and splits flights. Research scripts may
 keep their own invocation/summary JSON and console captures under ignored
 `outputs/`; these are research evidence, not artifacts of a normal application run.
+
+## Frantisek DVR validation
+
+`analyze_frantisek.py` inspects native timestamps/metrics with the production
+snow policy and writes review contact sheets. `compare_frantisek.py` compares
+aligned lossless clips; `--extra-scales` adds downscale controls.
+`validate_frantisek.py` independently compares both full outputs with the
+inspected source timestamps. Use fresh ignored directories for initial runs.
+Commands, measured results and limitations:
+[Frantisek study](../docs/research/frantisek-2026-10-04.md).
+These tools create explicit research JSON/CSV; application logging is unchanged.

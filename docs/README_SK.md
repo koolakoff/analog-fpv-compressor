@@ -2,14 +2,50 @@
 
 # analog-fpv-compressor
 
-Program na kompresiu DVR záznamov z analógových FPV dronov. Cieľom je malý
-súbor pri zachovaní zrozumiteľného pohybu dronu, geometrie scény a viditeľných
-prekážok. Jemné textúry a vizuálna krása majú nižšiu prioritu než užitočné informácie o lete.
+**Menšie DVR záznamy z analógových FPV dronov so zachovaním užitočných informácií o lete.**
+Program spája potlačenie šumu, automatické odstránenie bieleho šumu a rozdelenie
+letov do jedného postupu, s grafickým rozhraním pre Windows a anglickým CLI.
 
-Program potláča šum, odstraňuje potvrdené dlhé úseky bieleho šumu a kóduje
-užitočné video. Pôvodné súbory zostávajú zachované. Nastavenia môžu byť
-automatické alebo ručné. **Predvolene sa biely šum odstráni a zachované lety
-sa uložia do samostatných očíslovaných súborov. Zvuk sa predvolene odstráni.**
+Prioritou je zrozumiteľný pohyb dronu, geometria scény a viditeľné prekážky.
+Jemné textúry možno obmedziť kvôli menšiemu súboru. Automatické nastavenia sú
+východiskom; ručné umožňujú zvoliť pomer veľkosti, detailov a času spracovania.
+Pôvodné záznamy zostávajú zachované. Zvuk sa predvolene odstráni.
+
+[**Stiahnuť Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.3.0)
+· [Grafické rozhranie](#grafické-rozhranie) · [Konzolová verzia](#konzola)
+
+## Funkcie pre analógové FPV záznamy
+
+### Potlačenie šumu pred kompresiou
+
+Náhodný analógový šum spotrebúva dátový tok; jeho potlačenie pred kódovaním
+pomáha vytvoriť menší súbor pri zachovaní užitočných informácií o scéne.
+Intenzitu možno nastaviť ručne alebo filter vypnúť pre rýchlejšie spracovanie.
+
+![Rovnaký záber oblohy bez potlačenia šumu a so strednou intenzitou, so zväčšenými detailmi](images/denoise-sk.png)
+
+Skutočný DVR záber o 02:24 zo záznamu `air-school-stadion-oneflight`: vypnutý filter a stredná
+intenzita, pred kódovaním videa. Označená oblasť je zväčšená 2× bez zvýšenia kontrastu.
+
+### Automatické odstránenie dlhého bieleho šumu
+
+Program rozpozná potvrdené úseky bieleho šumu, napríklad počas výmeny batérie,
+a odstráni ich, aby nezaberali miesto v zázname. Krátke okraje pri prechodoch
+zostávajú zachované na ochranu užitočných záberov.
+
+![Schematická časová os: užitočné video, odstránený biely šum a opäť užitočné video v dvoch výstupných súboroch](images/snow-timeline-sk.png)
+
+Schematická časová os zo skutočných DVR záberov; rozostupy nie sú časovou
+mierkou. Označený úsek bieleho šumu sa odstráni, užitočné časti zostanú.
+
+### Viac záznamov a samostatné lety
+
+Pridajte viac súborov do zoznamu alebo použite wildcard v CLI:
+záznamy sa spracujú nezávisle a potvrdené medzery bieleho šumu predvolene
+rozdelia záznam na súbory `flight_converted_1.mkv`, `_2.mkv` a ďalšie.
+Šum možno tiež odstrániť a zachované úseky spojiť do jedného súboru.
+Rozdelenie sleduje stratu signálu, nie vzlet či pristátie: dlhá strata signálu
+počas letu môže tiež vytvoriť hranicu.
 
 Tvorcom programu je autor [tohto YouTube kanála o FPV dronoch](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 

@@ -2,14 +2,50 @@ Translations: [Русский](docs/README_RU.md) · [Українська](docs
 
 # analog-fpv-compressor
 
-Compress DVR recordings from analog FPV drones while preserving understandable
-drone movement, scene geometry and visible obstacles. Fine textures and visual
-beauty are secondary to a compact file and useful flight information.
+**Smaller DVR recordings from analog FPV drones, with useful flight information preserved.**
+The program combines noise reduction, automatic white-noise removal and flight
+splitting in one workflow, available through a Windows GUI or an English CLI.
 
-The program reduces noise, removes confirmed long stretches of white noise and
-encodes the useful video. Original files are preserved. Settings can be automatic
-or selected manually. **By default, white noise is removed and the retained
-flights are written to separate numbered files. Audio is removed by default.**
+The priority is understandable drone movement, scene geometry and visible
+obstacles. Fine textures can be reduced to save space. Automatic settings provide
+a starting point; manual controls let you balance size, detail and processing time.
+Original recordings are preserved. Audio is removed by default.
+
+[**Download the Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.3.0)
+· [Graphical interface](#graphical-interface) · [Console usage](#console-usage)
+
+## Built for analog FPV recordings
+
+### Reduce noise before compression
+
+Random analog noise consumes bitrate; reducing it before encoding helps create
+smaller files while retaining useful scene information. Noise reduction can be
+adjusted or disabled to reduce processing work.
+
+![The same sky frame with noise reduction off and medium, with enlarged details](docs/images/denoise-en.png)
+
+Real DVR frame at 02:24 from `air-school-stadion-oneflight`: filter off versus medium, before
+video encoding. The marked area is enlarged 2× without a contrast boost.
+
+### Automatically remove sustained white noise
+
+The program detects confirmed stretches of white noise, such as the gap during
+a battery change, and removes them instead of spending space on unusable video.
+Short transition margins are retained to protect useful frames.
+
+![Schematic video timeline: useful video, removed white noise, then useful video in two output files](docs/images/snow-timeline-en.png)
+
+Schematic timeline using real DVR frames; spacing is not a time scale. The
+highlighted white-noise section is removed, while the useful sections remain.
+
+### Process multiple recordings and separate flights
+
+Add several files to the queue or pass a wildcard to the CLI: each recording is
+processed independently, and by default confirmed white-noise gaps separate it
+into numbered outputs such as `flight_converted_1.mkv` and `_2.mkv`.
+You can also remove noise and join the retained sections into one file.
+Splitting follows signal loss; it does not detect takeoff or landing, so a long
+signal loss during a flight can also create a boundary.
 
 The creator of this program is the author of [this YouTube channel about FPV drones](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 
