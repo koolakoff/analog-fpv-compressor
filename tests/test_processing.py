@@ -30,6 +30,15 @@ def make_plan(source, output, tools, probe=None, timestamps=(0., .1, .5, .6, 1.1
 
 
 class MappingTests(unittest.TestCase):
+    def test_muxer_sentinel_does_not_escape_into_progress(self):
+        events = []
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as diagnostic:
+            _run([sys.executable, "-c", "print('frame=5'); print('out_time_us=9223372036851703')"],
+                 diagnostic, emit=events.append, total=1, total_frames=10)
+        self.assertEqual(len(events), 1)
+        self.assertIsNone(events[0].data["seconds"])
+        self.assertEqual(events[0].data["fraction"], .5)
+
     def test_fractional_boundaries_and_sparse_segment_mapping(self):
         plan = make_plan(Path("source.avi"), Path("out.mkv"), {"ffmpeg": "ffmpeg"})
         actual = expected_timestamps(plan)

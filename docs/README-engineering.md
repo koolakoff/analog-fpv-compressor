@@ -90,6 +90,9 @@ Pip создаёт `.venv\Scripts\fpv-compress.exe` по записи `[project.
 Сама среда создаётся локально на каждом компьютере и не распространяется.
 Релизный EXE создаёт отдельный процесс сборки, описанный ниже.
 
+Текущая установленная из исходников версия — 0.2.0. Опубликованный ZIP 0.1.0
+остаётся прежним выпуском; batch и split появились после него.
+
 Запуск разработки:
 
 ```powershell
@@ -142,6 +145,31 @@ result = process(plan, on_event=lambda event: print(event.code, event.data))
 `CancelToken` поддерживает отмену из другого потока. Производственный пакет
 в `src/`, исследовательские инструменты отдельно в `benchmarks/`.
 
+Для batch/naming и split доступны общие функции:
+
+```python
+from analog_fpv_compressor import make_jobs, plan_outputs
+from analog_fpv_compressor.jobs import destination_paths, validate_jobs
+
+jobs = make_jobs(["*.avi"], output_dir="converted", output_suffix="_small")
+reserved = {job.input_path.resolve() for job in jobs}
+reserved.update(path for job in jobs for path in destination_paths(job))
+for settings in jobs:
+    analysis = analyze(settings)
+    source_plan = build_plan(settings, analysis)
+    outputs = plan_outputs(source_plan, split_flights=True)
+    validate_jobs([plan.settings for plan in outputs], protected_paths=reserved)
+    for output_plan in outputs:
+        result = process(output_plan)
+```
+
+`make_jobs` проверяет входы и коллизии базовых имён. Когда части известны,
+перед выполнением всего набора проверять их через
+`analog_fpv_compressor.jobs.validate_jobs`, защищая также все входы и уже
+зарезервированные пути. CLI это делает автоматически. API `process` остаётся
+выполнением одного плана; управление очередью, журналами и общей отменой —
+за вызывающей оболочкой. Детектор и кодирование не дублируются.
+
 ## Проверки
 
 ```powershell
@@ -151,6 +179,8 @@ result = process(plan, on_event=lambda event: print(event.code, event.data))
 Для интеграционных тестов FFmpeg должен находиться в PATH либо задайте
 `FPV_FFMPEG_BIN` равным пути к его каталогу `bin`. Полные проверки реальных
 AVI и повторение измерений описаны в [benchmarks/README.md](../benchmarks/README.md).
+Пакетные проверки и разделение реальных записей выполняет
+`benchmarks/validate_batch.py`; результаты остаются в `outputs/batch-validation/`.
 
 
 ## Сборка и публикация релиза

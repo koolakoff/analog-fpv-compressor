@@ -91,3 +91,9 @@ git -c safe.directory=D:/work/my_prjects/analog-fpv-compressor status
 Дополнительные зависимости сборщика установлены pip автоматически.
 Сценарии `scripts/build_release.py` и `scripts/verify_release.py` отделяют
 сборку от рабочей среды. FFmpeg не включается в публикуемый архив.
+
+## Локальная версия 0.2.0
+
+После добавления batch/naming/split выполнен `pip install -e .`:
+локальная команда теперь использует исходники 0.2.0. Python/NumPy/FFmpeg
+не менялись. Опубликованный ZIP и тег 0.1.0 остаются прежними.

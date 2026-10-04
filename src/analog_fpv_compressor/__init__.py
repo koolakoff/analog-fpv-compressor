@@ -2,8 +2,20 @@
 
 from .models import Analysis, CancelToken, Event, Plan, Result, Settings
 
-__version__ = "0.1.0"
-__all__ = ["Analysis", "CancelToken", "Event", "Plan", "Result", "Settings", "analyze", "build_plan", "process", "execute"]
+__version__ = "0.2.0"
+__all__ = ["Analysis", "CancelToken", "Event", "Plan", "Result", "Settings", "analyze", "build_plan", "process", "execute", "make_jobs", "plan_outputs"]
+
+
+def make_jobs(inputs, **options):
+    """Resolve input patterns and output naming into per-input Settings."""
+    from .jobs import make_jobs as implementation
+    return implementation(inputs, **options)
+
+
+def plan_outputs(plan, split_flights=False):
+    """Resolve one source plan into joined or numbered independent outputs."""
+    from .jobs import plan_outputs as implementation
+    return implementation(plan, split_flights=split_flights)
 
 
 def analyze(settings, emit=None, cancel=None):

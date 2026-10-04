@@ -20,6 +20,7 @@ from .runtime import capture, check_cancel, discover_tools
 
 DENOISE = {"weak": "1.5:3:1:4", "medium": "3:5:1.5:6", "strong": "6:8:2:8"}
 HEVC_PRESETS = ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow")
+AAC_RATES = (7350, 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000)
 
 
 def emit_event(emit, code, **data):
@@ -247,7 +248,7 @@ def analyze(settings, emit=None, cancel=None):
         audio_encoder = "aac" if Path(settings.output_path).suffix.lower() == ".mp4" else "flac"
         if not re.search(rf"\b{audio_encoder}\b", available_encoders):
             raise ValueError(f"FFmpeg is missing required audio encoder {audio_encoder}")
-        audio_filters = ("asettb", "atrim", "asetpts", "aresample", "apad", "anull")
+        audio_filters = ("aformat", "asettb", "atrim", "asetpts", "aresample", "apad", "anull")
         if any(not re.search(rf"\b{f}\b", available_filters) for f in audio_filters):
             raise ValueError("FFmpeg is missing required audio filters")
     frame_command = [tools["ffprobe"], "-v", "error", "-threads", "2", "-select_streams", str(video["index"]),
@@ -344,6 +345,13 @@ def build_plan(settings, analysis):
         reasons["audio"] = "No audio stream in input; output will contain video only"
     else:
         reasons["audio"] = "Remove audio by default" if audio == "remove" else "Keep audio with the same source interval mapping"
+    audio_rate = None
+    if audio == "keep":
+        audio_stream = next(stream for stream in analysis.probe["streams"] if stream["codec_type"] == "audio")
+        source_rate = int(audio_stream["sample_rate"])
+        audio_rate = min(AAC_RATES, key=lambda rate: abs(rate - source_rate)) if settings.output_path.suffix.lower() == ".mp4" else source_rate
+        if audio_rate != source_rate:
+            reasons["audio"] += f"; resample from {source_rate} Hz to AAC-supported {audio_rate} Hz after source-clock trimming"
     reasons["cut_no_signal"] = "Conservative native-timestamp snow policy; blue-screen removal disabled" if settings.cut_no_signal == "auto" else "Explicit off; snow analysis skipped"
     mapping, position = [], 0.0
     for begin, finish in kept:
@@ -351,7 +359,8 @@ def build_plan(settings, analysis):
         position += finish - begin
     selected = {"codec": settings.codec, "encoder": encoder, "crf": crf, "bitrate": bitrate, "preset": preset,
                 "width": width, "height": height, "denoise": DENOISE.get(denoise), "denoise_level": denoise,
-                "deinterlace": deinterlace, "field_order": field, "audio": audio, "threads": int(settings.threads),
+                "deinterlace": deinterlace, "field_order": field, "audio": audio, "audio_sample_rate": audio_rate,
+                "threads": int(settings.threads),
                 "in_range": "full" if video.get("color_range") == "pc" or video.get("pix_fmt", "").startswith("yuvj") else "limited" if video.get("color_range") == "tv" else "auto",
                 "out_range": "limited", "pixel_format": "yuv420p"}
     return Plan(settings=settings, analysis=analysis, selected=selected, keep_intervals=kept,

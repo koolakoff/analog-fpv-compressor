@@ -82,3 +82,25 @@ time. Outputs, logs and JSON remain local. `summarize_cli.py` regenerates the
 tracked [CLI validation report](../docs/research/cli-validation-2026-10-04.md).
 Additional short comparisons and real ADPCM-to-AAC conversion are recorded in
 [CLI edge checks](../docs/research/cli-edges-2026-10-04.md).
+
+## Batch and split regression
+
+`python benchmarks/validate_batch.py --directory outputs/batch-repeat` runs one
+quoted-glob batch on all three original AVIs and compares encoded video packets
+against the earlier single-input defaults. It then splits the interrupted stadium
+recording with FLAC audio and the home recording with MP4/AAC audio. Every part
+is decoded and validated by the core; summed frame counts must match the joined
+baseline. The target directory must be fresh. Evidence includes invocations,
+console logs, per-output reports and a JSON summary. Synthetic three-flight
+splitting and collision/cancellation behavior are also covered in `tests/`.
+
+`summarize_batch.py` rechecks video packet hashes against the previous single-input
+defaults and compares total split frame counts using existing reports. The first
+home MP4 audio run was corrected and repeated in `home-flights-fixed/`:
+
+```powershell
+.\.venv\Scripts\python.exe benchmarks/summarize_batch.py --home-directory home-flights-fixed
+```
+
+Measured results and the audio-clock regression fix:
+[batch validation](../docs/research/batch-validation-2026-10-04.md).

@@ -33,8 +33,13 @@ def auto_duration(value):
 def create_parser():
     parser = argparse.ArgumentParser(description="Compress analog FPV DVR video while preserving flight information.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("-i", "--input", required=True, type=Path, help="Input DVR video")
-    parser.add_argument("-o", "--output", required=True, type=Path, help="New output video; existing files are never overwritten")
+    parser.add_argument("-i", "--input", required=True, nargs="+", action="extend",
+                        help="Input DVR files or quoted glob patterns; repeated -i is supported")
+    parser.add_argument("-o", "--output", type=Path, help="Explicit output filename for one input only")
+    parser.add_argument("--output-dir", type=Path, help="Output directory, created if needed; default beside each input")
+    parser.add_argument("--output-suffix", help="Filename suffix; default _converted")
+    parser.add_argument("--format", choices=["mkv", "mp4"], help="Automatic output container; default mkv")
+    parser.add_argument("--split-flights", action="store_true", help="Write numbered outputs separated by confirmed snow")
     parser.add_argument("--audio", choices=["remove", "keep"], default="remove", help="Remove audio by default, or preserve it")
     parser.add_argument("--codec", choices=["av1", "hevc"], default="av1")
     parser.add_argument("--crf", type=auto_integer, default="auto")
@@ -55,23 +60,34 @@ def create_parser():
     return parser
 
 
+def processing_options(args):
+    """Use the same option names for CLI settings and shared batch resolution."""
+    return {"crf": args.crf, "bitrate": args.bitrate, "preset": args.preset, "scale": args.scale,
+            "denoise": args.denoise, "deinterlace": args.deinterlace, "field_order": args.field_order,
+            "cut_no_signal": args.cut_no_signal, "no_signal_min_duration": args.no_signal_min_duration,
+            "audio": args.audio, "codec": args.codec, "ffmpeg_dir": args.ffmpeg_dir, "threads": args.threads}
+
+
 def settings_from_args(args):
-    return Settings(input_path=args.input, output_path=args.output, crf=args.crf, bitrate=args.bitrate,
-                    preset=args.preset, scale=args.scale, denoise=args.denoise, deinterlace=args.deinterlace,
-                    field_order=args.field_order, cut_no_signal=args.cut_no_signal,
-                    no_signal_min_duration=args.no_signal_min_duration, audio=args.audio, codec=args.codec,
-                    ffmpeg_dir=args.ffmpeg_dir, threads=args.threads,
-                    report_path=args.report or Path(str(args.output) + ".report.json"),
-                    log_path=args.log_file or Path(str(args.output) + ".log"))
+    """Convert one literal input without touching the filesystem; batch uses make_jobs."""
+    if len(args.input) != 1:
+        raise ValueError("Use make_jobs for multiple inputs")
+    source = Path(args.input[0])
+    output = args.output or (args.output_dir or source.parent) / (
+        source.stem + (args.output_suffix if args.output_suffix is not None else "_converted") + "." + (args.format or "mkv"))
+    return Settings(source, output, **processing_options(args),
+                    report_path=args.report or Path(str(output) + ".report.json"),
+                    log_path=args.log_file or Path(str(output) + ".log"))
 
 
 class EventLogger:
     """Persist the same events as English text and versioned JSON Lines."""
 
-    def __init__(self, path, machine_stdout=False):
+    def __init__(self, path, machine_stdout=False, echo=True):
         self.path = Path(path)
         self.json_path = Path(str(path) + ".jsonl")
         self.machine_stdout = machine_stdout
+        self.echo = echo
         self.text_file = None
         self.json_file = None
 
@@ -103,7 +119,8 @@ class EventLogger:
         self.text_file.flush()
         self.json_file.write(encoded + "\n")
         self.json_file.flush()
-        print(message, file=sys.stderr, flush=True)
+        if self.echo:
+            print(message, file=sys.stderr, flush=True)
         if self.machine_stdout:
             print(encoded, flush=True)
 
@@ -117,55 +134,138 @@ def format_timestamp(seconds):
     return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{fraction:03d}"
 
 
+def split_summary(plan, plans, results, status, message=None):
+    """Describe numbered outputs without calling other useful scenes removed noise."""
+    completed = {result.output_path: result for result in results}
+    outputs = []
+    for index, part in enumerate(plans, 1):
+        result = completed.get(part.settings.output_path)
+        output = {"index": index, "output_path": str(part.settings.output_path),
+                  "report_path": str(part.settings.report_path), "log_path": str(part.settings.log_path),
+                  "keep_intervals": part.keep_intervals, "mapping": part.mapping,
+                  "status": "complete" if result else "planned"}
+        if result:
+            output.update(bytes=result.bytes, duration_seconds=result.duration_seconds)
+        outputs.append(output)
+    return {"schema_version": 1, "status": status, "split_flights": True, "plan": to_dict(plan),
+            "outputs": outputs, "completed_outputs": len(results), "message": message}
+
+
+def run_job(settings, args, cancel, index, count, protected_paths):
+    """Analyze one source once, then encode joined or independent output plans."""
+    from . import controller, processing
+    from .jobs import destination_paths, plan_outputs, validate_jobs, write_manifest
+    plan, plans, results = None, (), []
+    with EventLogger(settings.log_path, args.events_jsonl) as logger:
+        def emit(event):
+            logger(Event(event.code, {"input": str(settings.input_path), "job_index": index,
+                                      "job_count": count, **event.data}))
+        try:
+            emit(Event("job.started", {"settings": to_dict(settings), "analyze_only": args.analyze_only,
+                                        "split_flights": args.split_flights}))
+            analysis = controller.analyze(settings, emit=emit, cancel=cancel)
+            for diagnostic in analysis.diagnostics:
+                emit(Event("warning", {"stage": "analysis", "message": diagnostic}))
+            if cancel.is_cancelled():
+                emit(Event("job.cancelled"))
+                return 130
+            plan = controller.build_plan(settings, analysis)
+            plans = plan_outputs(plan, split_flights=args.split_flights)
+            emit(Event("plan.resolved", {"selected": plan.selected, "reasons": plan.reasons,
+                                          "removed_intervals": plan.removed_intervals}))
+            if args.split_flights:
+                validate_jobs([part.settings for part in plans], protected_paths=protected_paths)
+                emit(Event("flights.planned", {"count": len(plans),
+                                                "outputs": [str(part.settings.output_path) for part in plans]}))
+            if args.analyze_only:
+                summary = split_summary(plan, plans, [], "analyzed") if args.split_flights else {
+                    "schema_version": 1, "status": "analyzed", "plan": to_dict(plan)}
+                write_manifest(settings.report_path, summary)
+                emit(Event("job.analyzed", {"report": settings.report_path}))
+                return 0
+            for part_index, part in enumerate(plans, 1):
+                if args.split_flights:
+                    from .runtime import check_cancel
+                    check_cancel(cancel)
+                    with EventLogger(part.settings.log_path, echo=False) as part_logger:
+                        def part_emit(event):
+                            tagged = Event(event.code, {"part_index": part_index,
+                                                        "part_count": len(plans), **event.data})
+                            part_logger(tagged)
+                            emit(tagged)
+                        part_emit(Event("part.started", {"settings": to_dict(part.settings)}))
+                        try:
+                            result = processing.execute(part, emit=part_emit, cancel=cancel)
+                        except Exception as error:
+                            from .runtime import CancelledError
+                            from .processing import ProcessingCancelled
+                            cancelled = cancel.is_cancelled() or isinstance(error, (CancelledError, ProcessingCancelled))
+                            part_emit(Event("part.cancelled" if cancelled else "part.failed", {"message": str(error)}))
+                            raise
+                        results.append(result)
+                        part_emit(Event("part.completed", {"output": result.output_path,
+                                                            "report": result.report_path, "bytes": result.bytes}))
+                else:
+                    result = processing.execute(part, emit=emit, cancel=cancel)
+                    results.append(result)
+            if args.split_flights:
+                write_manifest(settings.report_path, split_summary(plan, plans, results, "complete"))
+                protected_paths.update(path for part in plans for path in destination_paths(part.settings))
+                emit(Event("job.completed", {"outputs": [str(result.output_path) for result in results],
+                                              "report": settings.report_path,
+                                              "bytes": sum(result.bytes for result in results)}))
+            else:
+                result = results[0]
+                emit(Event("job.completed", {"output": result.output_path, "report": result.report_path,
+                                              "bytes": result.bytes, "duration_seconds": result.duration_seconds}))
+            return 0
+        except Exception as error:
+            from .runtime import CancelledError
+            from .processing import ProcessingCancelled
+            cancelled = cancel.is_cancelled() or isinstance(error, (CancelledError, ProcessingCancelled))
+            if args.split_flights and plan is not None:
+                try:
+                    write_manifest(settings.report_path, split_summary(
+                        plan, plans, results, "cancelled" if cancelled else "failed", str(error)))
+                except Exception as report_error:
+                    print(f"Could not save split summary: {report_error}", file=sys.stderr)
+            emit(Event("job.cancelled" if cancelled else "job.failed", {
+                "message": str(error), "completed_outputs": [str(result.output_path) for result in results]}))
+            return 130 if cancelled else 1
+
+
 def main(argv=None):
     args = create_parser().parse_args(argv)
-    settings = settings_from_args(args)
-    cancel = CancelToken()
-    previous_handler = None
+    cancel, previous_handler = CancelToken(), None
     try:
-        from . import controller, processing
-        controller.validate_settings(settings)
-        paths = [settings.input_path, settings.output_path, settings.report_path,
-                 settings.log_path, Path(str(settings.log_path) + ".jsonl")]
-        resolved = [path.resolve() for path in paths]
-        if len(set(resolved)) != len(resolved):
-            raise ValueError("Input, output, report, and log paths must be distinct")
-        for path in paths[1:]:
-            if path.exists():
-                raise FileExistsError(f"Refusing to overwrite existing file: {path}")
-            if not path.parent.is_dir():
-                raise ValueError(f"Destination directory does not exist: {path.parent}")
+        from .jobs import destination_paths, make_jobs
+        if args.split_flights and args.cut_no_signal == "off":
+            raise ValueError("--split-flights requires automatic snow detection; remove --cut-no-signal off")
+        jobs = make_jobs(args.input, output_path=args.output, output_dir=args.output_dir,
+                         output_suffix=args.output_suffix, output_format=args.format,
+                         report_path=args.report, log_path=args.log_file, **processing_options(args))
+        protected = {Path(job.input_path).resolve() for job in jobs}
+        protected.update(path for job in jobs for path in destination_paths(job))
         previous_handler = signal.signal(signal.SIGINT, lambda signum, frame: cancel.cancel())
-        with EventLogger(settings.log_path, args.events_jsonl) as emit:
+        outcomes = []
+        for index, settings in enumerate(jobs, 1):
+            if cancel.is_cancelled():
+                return 130
             try:
-                emit(Event("job.started", {"settings": to_dict(settings), "analyze_only": args.analyze_only}))
-                analysis = controller.analyze(settings, emit=emit, cancel=cancel)
-                for diagnostic in analysis.diagnostics:
-                    emit(Event("warning", {"stage": "analysis", "message": diagnostic}))
-                if cancel.is_cancelled():
-                    emit(Event("job.cancelled"))
-                    return 130
-                plan = controller.build_plan(settings, analysis)
-                emit(Event("plan.resolved", {"selected": plan.selected, "reasons": plan.reasons,
-                                              "removed_intervals": plan.removed_intervals}))
-                if args.analyze_only:
-                    with settings.report_path.open("x", encoding="utf-8") as destination:
-                        json.dump({"schema_version": 1, "status": "analyzed", "plan": to_dict(plan)},
-                                  destination, indent=2, ensure_ascii=False, allow_nan=False)
-                    emit(Event("job.analyzed", {"report": settings.report_path}))
-                else:
-                    result = processing.execute(plan, emit=emit, cancel=cancel)
-                    emit(Event("job.completed", {"output": result.output_path, "report": result.report_path,
-                                                 "bytes": result.bytes, "duration_seconds": result.duration_seconds}))
-                return 0
+                code = run_job(settings, args, cancel, index, len(jobs), protected)
             except Exception as error:
-                from .runtime import CancelledError
-                from .processing import ProcessingCancelled
-                if cancel.is_cancelled() or isinstance(error, (CancelledError, ProcessingCancelled)):
-                    emit(Event("job.cancelled", {"message": str(error)}))
-                    return 130
-                emit(Event("job.failed", {"message": str(error)}))
-                return 1
+                print(f"Error processing {settings.input_path}: {error}", file=sys.stderr)
+                code = 130 if cancel.is_cancelled() else 1
+            outcomes.append(code)
+            if code == 130:
+                return 130
+        if len(jobs) > 1:
+            summary = {"inputs": len(jobs), "succeeded": outcomes.count(0), "failed": outcomes.count(1)}
+            print(f"Batch completed: {summary['succeeded']}/{len(jobs)} inputs succeeded.", file=sys.stderr)
+            if args.events_jsonl:
+                print(json.dumps({"schema_version": 1, "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+                                  "code": "batch.completed", "data": summary}), flush=True)
+        return 1 if any(outcomes) else 0
     except KeyboardInterrupt:
         cancel.cancel()
         print("Cancelled.", file=sys.stderr)

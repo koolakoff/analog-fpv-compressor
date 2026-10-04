@@ -142,11 +142,15 @@ audio, including the offset of the first actual video frame from its boundary.
             output_low = math.ceil(segment["offset"] * rate)
             output_high = math.ceil((segment["offset"] + segment["end"] - segment["begin"]) * rate)
             length = output_high - output_low
-            filters.append(f"{audio_input}asettb=1/{rate},atrim=start_pts={low}:end_pts={high},"
-                           f"asetpts=PTS-{segment['begin'] * rate},aresample=async=1:first_pts=0,"
+            filters.append(f"{audio_input}aformat=sample_rates={rate},asettb=1/{rate},atrim=start_pts={low}:end_pts={high},"
+                           f"asetpts=PTS-{segment['begin'] * rate},aresample={rate}:async=1:first_pts=0,"
                            f"apad=whole_len={length},atrim=end_sample={length}[a{index}]")
             labels.append(f"[a{index}]")
-        filters.append("".join(labels) + (f"concat=n={len(labels)}:v=0:a=1[audio]" if len(labels) > 1 else "anull[audio]"))
+        # Source-clock trim/pad lengths must not be negotiated at the AAC rate.
+        # Only convert after every retained interval has its exact source length.
+        filters.append("".join(labels) + (f"concat=n={len(labels)}:v=0:a=1[kept_audio]" if len(labels) > 1 else "anull[kept_audio]"))
+        target_rate = selected.get("audio_sample_rate") or rate
+        filters.append(f"[kept_audio]aresample={target_rate}[audio]")
     command += ["-filter_complex_threads", str(filter_threads), "-filter_complex", ";".join(filters),
                 "-map", "[video]", "-fps_mode", "passthrough", "-enc_time_base:v", "filter",
                 "-color_range", "tv", "-c:v", "libsvtav1" if selected["codec"] == "av1" else "libx265",
@@ -161,6 +165,8 @@ audio, including the offset of the first actual video frame from its boundary.
         command += ["-x265-params", f"pools={threads}:frame-threads=1"]
     if keep_audio:
         command += ["-map", "[audio]", "-c:a", "aac" if plan.settings.output_path.suffix.lower() == ".mp4" else "flac"]
+        if selected.get("audio_sample_rate"):
+            command += ["-ar", str(selected["audio_sample_rate"])]
     else:
         command += ["-an"]
     if plan.settings.output_path.suffix.lower() == ".mp4":
@@ -209,10 +215,13 @@ def _run(command, diagnostics, emit=None, cancel=None, total=None, total_frames=
             if line.startswith("out_time_us=") and time.monotonic() - last_progress >= .5:
                 try:
                     seconds = int(line.split("=", 1)[1]) / 1_000_000
+                    # Some muxers report a sentinel timestamp while flushing.
+                    if seconds < 0 or (total is not None and seconds > total + 1):
+                        seconds = None
                     _emit(emit, "progress", stage="encode", seconds=seconds,
                           frames=encoded_frames, total_frames=total_frames,
                           fraction=min(1.0, encoded_frames / total_frames) if total_frames else
-                          min(1.0, seconds / total) if total else None)
+                          min(1.0, seconds / total) if total and seconds is not None else None)
                     last_progress = time.monotonic()
                 except ValueError:
                     pass
@@ -269,6 +278,8 @@ def validate_output(plan, path, diagnostics, cancel=None):
     if audio:
         decoded = [f for f in probe["frames"] if f["media_type"] == "audio"]
         rate = int(audio["sample_rate"])
+        if plan.selected.get("audio_sample_rate") and rate != plan.selected["audio_sample_rate"]:
+            raise ProcessingError("Output audio sample rate does not match the resolved plan.")
         total = sum(int(f["nb_samples"]) for f in decoded)
         desired = sum((_fraction(e) - _fraction(b) for b, e in plan.keep_intervals), Fraction())
         target_samples = math.ceil(desired * rate)

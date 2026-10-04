@@ -68,7 +68,11 @@ def main():
                    cwd=ROOT, check=True)
     shutil.copytree(work / "stage/fpv-compress", bundle)
     for filename in ("README.txt", "setup-ffmpeg.cmd", "setup-ffmpeg.ps1"):
-        shutil.copy2(ROOT / "packaging" / filename, bundle / filename)
+        if filename == "README.txt":
+            text = (ROOT / "packaging" / filename).read_text(encoding="utf-8").replace("@VERSION@", version)
+            (bundle / filename).write_text(text, encoding="utf-8")
+        else:
+            shutil.copy2(ROOT / "packaging" / filename, bundle / filename)
     for filename in ("LICENSE", "THIRD-PARTY-NOTICES.md"):
         shutil.copy2(ROOT / filename, bundle / filename)
     collect_licenses(bundle / "licenses")
