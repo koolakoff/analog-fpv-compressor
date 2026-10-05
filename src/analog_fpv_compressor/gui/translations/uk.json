@@ -1,4 +1,10 @@
 {
+  "File {index} of {count}: {name}": "Файл {index} із {count}: {name}",
+  "Overall progress ({elapsed} / {total})": "Загальний прогрес ({elapsed} / {total})",
+  "Current stage": "Поточний етап",
+  "Overall progress": "Загальний прогрес",
+  "Elapsed: {elapsed} · Estimated total: {total}": "Минуло: {elapsed} · Оцінка загального часу: {total}",
+  "Processing completed": "Обробку завершено",
   "Add files…": "Додати файли…",
   "Remove selected": "Видалити вибрані",
   "Language": "Мова",

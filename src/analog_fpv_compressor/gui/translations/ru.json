@@ -1,4 +1,10 @@
 {
+  "File {index} of {count}: {name}": "Файл {index} из {count}: {name}",
+  "Overall progress ({elapsed} / {total})": "Общий прогресс ({elapsed} / {total})",
+  "Current stage": "Текущий этап",
+  "Overall progress": "Общий прогресс",
+  "Elapsed: {elapsed} · Estimated total: {total}": "Прошло: {elapsed} · Оценка общего времени: {total}",
+  "Processing completed": "Обработка завершена",
   "Add files…": "Добавить файлы…",
   "Remove selected": "Удалить выбранные",
   "Language": "Язык",

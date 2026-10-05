@@ -318,14 +318,23 @@ def validate_output(plan, path, diagnostics, cancel=None):
     frame_tolerance = float(Fraction(1, 1) / Fraction(video_source.get("avg_frame_rate", "30/1"))) + tolerance
     duration = float(probe["format"]["duration"])
     duration_tolerance = max(frame_tolerance, (audio_report["padding_tolerance_samples"] / audio_report["sample_rate"]) if audio_report else 0)
-    if abs(duration - desired_duration) > duration_tolerance:
-        raise ProcessingError("Output duration exceeds the resolved interval clock tolerance.")
+    # Silent VFR output ends at the last retained frame, not at a cut boundary
+    # inside a missing-frame gap. Audio, when present, spans the interval clock.
+    nominal_step = float(plan.analysis.metadata.get("frame_step") or
+                         (Fraction(1, 1) / Fraction(video_source.get("avg_frame_rate", "30/1"))))
+    video_end = expected[-1] + nominal_step / (2 if plan.selected["deinterlace"] else 1)
+    expected_duration = max(video_end, desired_duration) if audio_report else video_end
+    if abs(duration - expected_duration) > duration_tolerance:
+        raise ProcessingError(f"Output duration differs from the expected stream endpoint: "
+                              f"expected {expected_duration:.6f}s, got {duration:.6f}s "
+                              f"(tolerance {duration_tolerance:.6f}s).")
     _run([str(plan.analysis.tools["ffmpeg"]), "-hide_banner", "-v", "error", "-xerror",
           "-threads", str(plan.settings.threads), "-i", str(path), "-f", "null", "-"], diagnostics, cancel=cancel)
     return {"decoded_frames": len(actual), "expected_frames": len(expected), "maximum_timestamp_error_seconds": max_error,
             "timestamp_tolerance_seconds": tolerance, "full_decode_passed": True,
             "audio": audio_report, "duration_seconds": duration,
-            "planned_duration_seconds": desired_duration, "duration_tolerance_seconds": duration_tolerance}
+            "planned_duration_seconds": desired_duration, "expected_stream_duration_seconds": expected_duration,
+            "duration_tolerance_seconds": duration_tolerance}
 
 
 def _publish(source, destination):

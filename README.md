@@ -23,10 +23,29 @@ Random analog noise consumes bitrate; reducing it before encoding helps create
 smaller files while retaining useful scene information. Noise reduction can be
 adjusted or disabled to reduce processing work.
 
+In our tests, medium noise reduction saved roughly **2–3% more space** on flight
+excerpts and **up to 16% on individual segments**, depending on the scene and
+codec settings. These are additional savings at the same codec settings, not
+the total reduction from the original DVR file. [Measured results](docs/research/denoise-recheck-2026-10-05.md).
+
 ![The same sky frame with noise reduction off and medium, with enlarged details](docs/images/denoise-en.png)
 
-Real DVR frame at 02:24 from `air-school-stadion-oneflight`: filter off versus medium, before
-video encoding. The marked area is enlarged 2× without a contrast boost.
+Real DVR frame at 02:24 from `air-school-stadion-oneflight`, with no people:
+filter off versus medium, before video encoding. The marked area is enlarged
+2× without a contrast boost. The visual difference is subtle.
+
+### Compress with AV1
+
+The default video codec is **AV1**, encoded by **SVT-AV1** through FFmpeg.
+HEVC/H.265 is also available as an alternative. MKV and MP4 are file containers;
+the codec determines how the video inside is compressed.
+
+![The same ceiling frame before and after AV1 compression, with denoise disabled](docs/images/codec-av1-en.png)
+
+The same frame at 01:36.067 from `home-other-helmet`, cropped without people:
+original versus AV1 CRF48/preset6, **denoise disabled**. Detail is enlarged 2×.
+Lossy encoding visibly smooths fine noise here; it can also discard real fine
+detail. This shows the codec's contribution separately from the denoise filter.
 
 ### Automatically remove sustained white noise
 

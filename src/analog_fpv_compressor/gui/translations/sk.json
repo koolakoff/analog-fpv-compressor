@@ -1,4 +1,10 @@
 {
+  "File {index} of {count}: {name}": "Súbor {index} z {count}: {name}",
+  "Overall progress ({elapsed} / {total})": "Celkový priebeh ({elapsed} / {total})",
+  "Current stage": "Aktuálna fáza",
+  "Overall progress": "Celkový priebeh",
+  "Elapsed: {elapsed} · Estimated total: {total}": "Uplynulo: {elapsed} · Odhad celkového času: {total}",
+  "Processing completed": "Spracovanie dokončené",
   "Add files…": "Pridať súbory…",
   "Remove selected": "Odstrániť vybrané",
   "Language": "Jazyk",

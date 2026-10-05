@@ -1,4 +1,10 @@
 {
+  "File {index} of {count}: {name}": "File {index} of {count}: {name}",
+  "Overall progress ({elapsed} / {total})": "Overall progress ({elapsed} / {total})",
+  "Current stage": "Current stage",
+  "Overall progress": "Overall progress",
+  "Elapsed: {elapsed} · Estimated total: {total}": "Elapsed: {elapsed} · Estimated total: {total}",
+  "Processing completed": "Processing completed",
   "Add files…": "Add files…",
   "Remove selected": "Remove selected",
   "Language": "Language",

@@ -149,6 +149,22 @@ class FFmpegIntegrationTests(unittest.TestCase):
         with self.assertRaises(ProcessingError):
             execute(plan)
 
+    def test_silent_cut_inside_missing_frame_gap_ends_at_last_frame(self):
+        plan = replace(self.plan("silent gap.mkv"), keep_intervals=((0., .45),))
+        result = execute(plan)
+        validation = result.report["validation"]
+        self.assertEqual(validation["decoded_frames"], 2)
+        self.assertAlmostEqual(validation["planned_duration_seconds"], .45)
+        self.assertAlmostEqual(validation["duration_seconds"], .2, places=2)
+        self.assertLess(validation["maximum_timestamp_error_seconds"], .0011)
+
+    def test_audio_cut_inside_missing_frame_gap_keeps_interval_clock(self):
+        plan = replace(self.plan("audio gap.mkv", audio="keep"), keep_intervals=((0., .45),))
+        result = execute(plan)
+        self.assertEqual(result.report["validation"]["decoded_frames"], 2)
+        self.assertAlmostEqual(result.duration_seconds, .45, places=2)
+        self.assertEqual(result.report["validation"]["audio"]["decoded_samples"], 3600)
+
     def test_cancelled_job_never_publishes(self):
         token = CancelToken()
         token.cancel()

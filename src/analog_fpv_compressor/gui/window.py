@@ -4,8 +4,9 @@ from collections import deque
 import json
 from pathlib import Path
 import sys
+import time
 
-from PySide6.QtCore import QSettings, QThread, Qt, QUrl, Slot
+from PySide6.QtCore import QSettings, QThread, QTimer, Qt, QUrl, Slot
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
                               QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel,
@@ -18,6 +19,7 @@ from ..models import CancelToken
 from ..runner import EventLogger
 from .i18n import CatalogTranslator, LANGUAGES, system_language, tr
 from .worker import BatchWorker
+from .progress import BatchProgress, duration_text
 
 STAGES = {"prepare": "Checking tools", "probe": "Reading video", "snow": "Finding white noise",
           "interlace": "Checking interlacing", "encode": "Encoding", "validate": "Checking result",
@@ -48,7 +50,12 @@ class MainWindow(QMainWindow):
         self.combos = []
         self.log_events = deque(maxlen=300)
         self.last_progress = None
-        self.last_selected = None
+        self.batch_progress = None
+        self.started_at = None
+        self.elapsed = 0.0
+        self.elapsed_timer = QTimer(self)
+        self.elapsed_timer.setInterval(1000)
+        self.elapsed_timer.timeout.connect(self.render_batch_progress)
         self.setAcceptDrops(True)
         self.resize(1000, 760)
         self.setMinimumSize(740, 560)
@@ -231,19 +238,22 @@ class MainWindow(QMainWindow):
         self.status.setWordWrap(True)
         self.status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.status)
-        self.selected_label = QLabel()
-        self.selected_label.setWordWrap(True)
-        self.selected_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.selected_label.setVisible(False)
-        layout.addWidget(self.selected_label)
         self.progress = QProgressBar()
         self.progress.setRange(0, 1000)
         self.progress.setValue(0)
+        self.stage_label = QLabel()
+        self.stage_label.setWordWrap(True)
+        layout.addWidget(self.stage_label)
         layout.addWidget(self.progress)
+        self.batch_time = QLabel()
+        self.batch_time.setWordWrap(True)
+        layout.addWidget(self.batch_time)
+        self.overall_progress = QProgressBar()
+        self.overall_progress.setRange(0, 1000)
+        self.overall_progress.setValue(0)
+        layout.addWidget(self.overall_progress)
         bottom = QHBoxLayout()
-        self.hint = self.bind(QLabel(), "Drop files here or use Add files. Originals are preserved.")
-        self.hint.setWordWrap(True)
-        bottom.addWidget(self.hint, 1)
+        bottom.addStretch()
         self.stop_button = self.button("Stop processing", self.stop)
         self.start_button = self.button("Start processing", self.start)
         bottom.addWidget(self.stop_button)
@@ -277,25 +287,8 @@ class MainWindow(QMainWindow):
         for record in self.records.values():
             self.render_record(record)
         self.render_status()
-        self.render_selected()
+        self.render_batch_progress()
         self.render_log()
-
-    def render_selected(self):
-        if not self.last_selected:
-            self.selected_label.setVisible(False)
-            return
-        selected = self.last_selected["selected"]
-        values = [("Resolution", f"{selected['width']} × {selected['height']}"),
-                  ("Noise reduction", tr({"off": "Off", "weak": "Weak", "medium": "Medium", "strong": "Strong"}.get(selected["denoise_level"], "Auto"))),
-                  ("Deinterlace", tr("On" if selected["deinterlace"] else "Off")),
-                  ("Codec", selected["codec"].upper()),
-                  ("Target bitrate" if selected["bitrate"] else "CRF", str(selected["bitrate"] or selected["crf"]))]
-        text = " · ".join(f"{tr(label)}: {value}" for label, value in values)
-        text += " · " + tr("Audio kept" if selected["audio"] == "keep" else "Audio removed")
-        self.selected_label.setText(text)
-        self.selected_label.setToolTip(tr("Selected settings and explanations (English diagnostics):") + "\n" +
-                                       json.dumps(self.last_selected.get("reasons", {}), ensure_ascii=False, indent=2))
-        self.selected_label.setVisible(True)
 
     def render_record(self, record):
         item = record["item"]
@@ -310,21 +303,43 @@ class MainWindow(QMainWindow):
             child.setText(4, tr("Ready"))
 
     def render_status(self):
+        stage_text = tr("Current stage")
+        if self.thread is not None and self.last_progress:
+            data = self.last_progress
+            detail = tr(STAGES.get(data.get("stage"), "Processing"))
+            if "part_index" in data:
+                detail += " · " + tr("Part {index} of {count}", index=data["part_index"], count=data["part_count"])
+            stage_text += f" ({detail})"
+        self.stage_label.setText(stage_text)
+        successful = (self.thread is None and self.summary and
+                      not self.summary["failed"] and not self.summary["cancelled"])
+        self.status.setStyleSheet("color: #15803d; font-weight: bold;" if successful else "")
         if self.cancel_token and self.cancel_token.is_cancelled():
             self.status.setText(tr("Stopping… Completed results will be kept."))
         elif self.thread is not None and self.last_progress:
             data = self.last_progress
-            source = STAGES.get(data.get("stage"), "Processing")
-            text = tr("File {index} of {count} · {stage}", index=data.get("job_index", 1),
-                      count=data.get("job_count", len(self.records)), stage=tr(source))
-            if "part_index" in data:
-                text += " · " + tr("Part {index} of {count}", index=data["part_index"], count=data["part_count"])
+            text = tr("File {index} of {count}: {name}", index=data.get("job_index", 1),
+                      count=data.get("job_count", len(self.records)), name=Path(data.get("input", "")).name)
             self.status.setText(text)
         elif self.summary:
-            key = "Stopped · ready: {succeeded} · errors: {failed}" if self.summary["cancelled"] else "Finished · ready: {succeeded} · errors: {failed}"
+            key = ("Processing completed" if successful else
+                   "Stopped · ready: {succeeded} · errors: {failed}" if self.summary["cancelled"] else
+                   "Finished · ready: {succeeded} · errors: {failed}")
             self.status.setText(tr(key, **self.summary))
         else:
             self.status.setText(tr("Ready to process"))
+
+    def render_batch_progress(self):
+        if self.elapsed_timer.isActive() and self.started_at is not None:
+            self.elapsed = time.monotonic() - self.started_at
+        estimate = self.batch_progress.estimated_total(self.elapsed) if self.batch_progress else None
+        if self.summary is not None:
+            estimate = None
+        self.batch_time.setText(tr("Overall progress ({elapsed} / {total})",
+                                   elapsed=duration_text(self.elapsed),
+                                   total=("≈ " + duration_text(estimate)) if estimate is not None else "—"))
+        if self.batch_progress:
+            self.overall_progress.setValue(round(self.batch_progress.fraction * 1000))
 
     def render_log(self):
         lines = []
@@ -381,7 +396,12 @@ class MainWindow(QMainWindow):
         self.update_actions()
 
     def choose_output_dir(self):
-        path = QFileDialog.getExistingDirectory(self, tr("Output folder"), self.output_dir.text())
+        candidates = [self.output_dir.text().strip()]
+        if self.records:
+            candidates.append(str(Path(next(iter(self.records))).parent))
+        candidates.append(str(self.preferences.value("last_input_dir", "")))
+        directory = next((folder for folder in candidates if folder and Path(folder).is_dir()), "")
+        path = QFileDialog.getExistingDirectory(self, tr("Output folder"), directory)
         if path:
             self.output_dir.setText(path)
 
@@ -429,6 +449,7 @@ class MainWindow(QMainWindow):
     def start(self):
         if self.thread is not None or not self.records:
             return
+        clicked_at = time.monotonic()
         try:
             options = self.options()
         except ValueError as error:
@@ -436,8 +457,11 @@ class MainWindow(QMainWindow):
             return
         self.preferences.setValue("ffmpeg_dir", self.ffmpeg_dir.text().strip())
         self.summary = self.last_progress = None
-        self.last_selected = None
-        self.render_selected()
+        self.started_at = clicked_at
+        self.elapsed = 0.0
+        self.batch_progress = BatchProgress(len(self.records), options["analyze_only"])
+        self.elapsed_timer.start()
+        self.render_batch_progress()
         self.log_events.clear()
         self.render_log()
         for record in self.records.values():
@@ -465,11 +489,15 @@ class MainWindow(QMainWindow):
         self.settings_panel.setEnabled(False)
         self.progress.setRange(0, 0)
         self.update_actions()
+        self.render_status()
         self.thread.start()
 
     @Slot(object)
     def receive_event(self, event):
         data = event.data
+        if self.batch_progress:
+            self.batch_progress.update(event.code, data)
+            self.render_batch_progress()
         record = self.records.get(data.get("input"))
         if event.code == "progress":
             self.last_progress = data
@@ -483,9 +511,6 @@ class MainWindow(QMainWindow):
             if event.code == "warning":
                 record.setdefault("warnings", []).append(str(data.get("message", "")))
                 record["item"].setToolTip(4, "\n".join(record["warnings"]))
-            if event.code == "plan.resolved":
-                self.last_selected = data
-                self.render_selected()
             states = {"job.started": "Processing", "job.completed": "Ready", "job.analyzed": "Analyzed",
                       "job.failed": "Failed", "job.cancelled": "Stopped"}
             if event.code in states:
@@ -527,6 +552,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def thread_finished(self):
+        self.elapsed = time.monotonic() - self.started_at if self.started_at is not None else 0.0
+        self.elapsed_timer.stop()
         self.thread = self.worker = None
         self.cancel_token = None
         if self.summary and self.summary["cancelled"]:
@@ -537,6 +564,9 @@ class MainWindow(QMainWindow):
         self.settings_panel.setEnabled(True)
         self.progress.setRange(0, 1000)
         self.progress.setValue(1000 if self.summary and not self.summary["failed"] and not self.summary["cancelled"] else 0)
+        if self.summary and not self.summary["cancelled"] and self.summary["succeeded"] + self.summary["failed"] == self.summary["inputs"]:
+            self.batch_progress.fraction = 1.0
+        self.render_batch_progress()
         self.render_status()
         self.update_actions()
         if self.pending_close:

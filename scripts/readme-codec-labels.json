@@ -1,0 +1,6 @@
+{
+  "en": {"title": "AV1 compression: before and after", "source": "Original DVR frame", "output": "AV1 CRF 48 · denoise off", "detail": "Same area, 2× detail"},
+  "ru": {"title": "Сжатие AV1: до и после", "source": "Исходный DVR-кадр", "output": "AV1 CRF 48 · denoise выключен", "detail": "Та же область, увеличение 2×"},
+  "uk": {"title": "Стиснення AV1: до і після", "source": "Оригінальний DVR-кадр", "output": "AV1 CRF 48 · denoise вимкнено", "detail": "Та сама ділянка, збільшення 2×"},
+  "sk": {"title": "Kompresia AV1: pred a po", "source": "Pôvodná DVR snímka", "output": "AV1 CRF 48 · denoise vypnuté", "detail": "Rovnaká oblasť, detail 2×"}
+}

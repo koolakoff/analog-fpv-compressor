@@ -212,6 +212,13 @@ class GuiTests(unittest.TestCase):
         self.window.snow.setCurrentIndex(self.window.snow.findData("split"))
         self.window.start()
         self.wait_finished()
+        self.assertEqual(self.window.overall_progress.value(), 1000)
+        self.assertEqual(self.window.status.text(), tr("Processing completed"))
+        self.assertIn("font-weight: bold", self.window.status.styleSheet())
+        self.assertFalse(self.window.elapsed_timer.isActive())
+        elapsed = self.window.elapsed
+        self.window.render_batch_progress()
+        self.assertEqual(self.window.elapsed, elapsed)
         record = self.window.records[str(source)]
         self.assertEqual(record["state"], "Ready")
         self.assertEqual(record["item"].childCount(), 2)

@@ -139,3 +139,10 @@ inspected source timestamps. Use fresh ignored directories for initial runs.
 Commands, measured results and limitations:
 [Frantisek study](../docs/research/frantisek-2026-10-04.md).
 These tools create explicit research JSON/CSV; application logging is unchanged.
+
+## Denoise contribution recheck
+
+`recheck_denoise.py --directory outputs/denoise-recheck-new` compares off/medium
+at identical codec settings on four excerpts, with warmup, repeated AV1 pairs,
+frame alignment and full decode validation. Use a fresh directory.
+Results and limits: [Denoise recheck](../docs/research/denoise-recheck-2026-10-05.md).

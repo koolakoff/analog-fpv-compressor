@@ -23,10 +23,30 @@ Náhodný analógový šum spotrebúva dátový tok; jeho potlačenie pred kódo
 pomáha vytvoriť menší súbor pri zachovaní užitočných informácií o scéne.
 Intenzitu možno nastaviť ručne alebo filter vypnúť pre rýchlejšie spracovanie.
 
+V našich testoch stredné potlačenie šumu dodatočne zmenšilo súbor približne
+o **2–3% pri úsekoch letu** a **až o 16% pri jednotlivých úsekoch**, v závislosti
+od scény a nastavení kodeku. Ide o dodatočnú úsporu pri rovnakých nastaveniach
+kodeku, nie o celkové zmenšenie oproti pôvodnému DVR súboru.
+[Výsledky meraní](research/denoise-recheck-2026-10-05.md).
+
 ![Rovnaký záber oblohy bez potlačenia šumu a so strednou intenzitou, so zväčšenými detailmi](images/denoise-sk.png)
 
-Skutočný DVR záber o 02:24 zo záznamu `air-school-stadion-oneflight`: vypnutý filter a stredná
-intenzita, pred kódovaním videa. Označená oblasť je zväčšená 2× bez zvýšenia kontrastu.
+Skutočný DVR záber o 02:24 zo záznamu `air-school-stadion-oneflight`, bez ľudí:
+vypnutý filter a stredná intenzita, pred kódovaním videa. Označená oblasť je
+zväčšená 2× bez zvýšenia kontrastu. Vizuálny rozdiel je malý.
+
+### Kompresia kodekom AV1
+
+Predvolený videokodek je **AV1**, kódovaný pomocou **SVT-AV1** cez FFmpeg.
+Alternatívou je HEVC/H.265. MKV a MP4 sú súborové kontajnery; kodek určuje,
+ako sa komprimuje video vnútri.
+
+![Rovnaká snímka stropu pred a po kompresii AV1, s vypnutým denoise](images/codec-av1-sk.png)
+
+Rovnaká snímka o 01:36,067 zo záznamu `home-other-helmet`, orezaná bez ľudí:
+originál a AV1 CRF48/preset6, **denoise vypnuté**. Detail je zväčšený 2×.
+Stratové kódovanie tu viditeľne vyhladzuje jemný šum, ale môže odstrániť aj
+skutočné jemné detaily. Príklad samostatne ukazuje prínos kodeku.
 
 ### Automatické odstránenie dlhého bieleho šumu
 

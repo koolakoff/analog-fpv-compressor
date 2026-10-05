@@ -18,7 +18,8 @@ from analog_fpv_compressor.runtime import discover_tools
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "outputs/readme-visuals"
 DESTINATION = ROOT / "docs/images"
-SKY_DETAIL = (180, 90, 270, 120)
+CONTEXT_CROP = (0, 0, 640, 480)
+NOISE_DETAIL = (180, 90, 270, 120)
 
 
 def frame_at(source, target, tools, name, denoise=False):
@@ -66,12 +67,15 @@ def save(image, painter, name):
 
 
 def denoise_comparison(before, after, labels, language):
+    before = before.copy(*CONTEXT_CROP)
+    after = after.copy(*CONTEXT_CROP)
     full_height = 540 * before.height() / before.width()
     detail_label_y = 126 + full_height + 8
     detail_y = detail_label_y + 44
-    image, painter = canvas(round(detail_y + SKY_DETAIL[3] * 2 + 36))
+    image, painter = canvas(round(detail_y + NOISE_DETAIL[3] * 2 + 36))
     label(painter, 40, 18, 1120, 46, labels["noise_title"], 30, bold=True)
-    crop = QRectF(*SKY_DETAIL)
+    crop = QRectF(NOISE_DETAIL[0] - CONTEXT_CROP[0], NOISE_DETAIL[1] - CONTEXT_CROP[1],
+                  NOISE_DETAIL[2], NOISE_DETAIL[3])
     for x, source, title in ((40, before, labels["off"]), (620, after, labels["on"])):
         label(painter, x, 78, 540, 34, title, 23, bold=True)
         full = QRectF(x, 126, 540, full_height)
@@ -88,6 +92,32 @@ def denoise_comparison(before, after, labels, language):
 def time_label(instant):
     minutes, seconds = divmod(round(instant), 60)
     return f"{minutes:02d}:{seconds:02d}"
+
+
+def codec_frames(tools):
+    """Read the matched no-denoise AV1 control from the recorded experiment."""
+    before, source_record = frame_at(ROOT / "examples/home-other-helmet.AVI", 96.066667, tools, "codec-source")
+    encoded = ROOT / "outputs/denoise-recheck-2026-10-05/weak-signal-av1-c48-off-r1.mkv"
+    after, output_record = frame_at(encoded, 1.066667, tools, "codec-av1-off")
+    if abs(source_record["time_s"] - 95 - output_record["time_s"]) > .0011:
+        raise RuntimeError("Codec comparison frames are not aligned")
+    return before, after, {"source": source_record, "output": output_record,
+                           "source_start_s": 95, "context_crop_xywh": [0, 5, 720, 160],
+                           "detail_crop_xywh": [110, 75, 270, 90], "denoise": "off",
+                           "codec": "AV1", "encoder": "libsvtav1", "crf": 48, "preset": 6}
+
+
+def codec_comparison(before, after, labels, language):
+    image, painter = canvas(540)
+    label(painter, 40, 18, 1120, 46, labels["title"], 30, bold=True)
+    for x, pixels, title in ((40, before, labels["source"]), (620, after, labels["output"])):
+        label(painter, x, 78, 540, 34, title, 23, bold=True)
+        painter.drawImage(QRectF(x, 126, 540, 120), pixels, QRectF(0, 5, 720, 160))
+        painter.setPen(QPen(QColor("#38bdf8"), 2))
+        painter.drawRect(QRectF(x + 110 * .75, 126 + 70 * .75, 270 * .75, 90 * .75))
+        label(painter, x, 260, 540, 32, labels["detail"], 17, "#475569")
+        painter.drawImage(QRectF(x, 312, 540, 180), pixels, QRectF(110, 75, 270, 90))
+    save(image, painter, f"codec-av1-{language}.png")
 
 
 def timeline(images, records, labels, language):
@@ -122,10 +152,12 @@ def main():
     EVIDENCE.mkdir(parents=True, exist_ok=True)
     DESTINATION.mkdir(parents=True, exist_ok=True)
     labels = json.loads((ROOT / "scripts/readme-visual-labels.json").read_text(encoding="utf-8"))
+    codec_labels = json.loads((ROOT / "scripts/readme-codec-labels.json").read_text(encoding="utf-8"))
     tools = discover_tools()
-    sky = ROOT / "examples/air-school-stadion-oneflight.AVI"
-    before, off_record = frame_at(sky, 144, tools, "sky-off")
-    after, on_record = frame_at(sky, 144, tools, "sky-medium", denoise=True)
+    codec_before, codec_after, codec_record = codec_frames(tools)
+    sample = ROOT / "examples/air-school-stadion-oneflight.AVI"
+    before, off_record = frame_at(sample, 144, tools, "sky-off")
+    after, on_record = frame_at(sample, 144, tools, "sky-medium", denoise=True)
     source = ROOT / "examples/Frantisek.AVI"
     captures = [frame_at(source, instant, tools, f"timeline-{index}")
                 for index, instant in enumerate((60, 70, 90, 100, 150, 160))]
@@ -133,13 +165,15 @@ def main():
     for language, text in labels.items():
         denoise_comparison(before, after, text, language)
         timeline(images, records, text, language)
+        codec_comparison(codec_before, codec_after, codec_labels[language], language)
     fingerprints = {}
-    for path in (sky, source):
+    for path in (sample, source, ROOT / "examples/home-other-helmet.AVI"):
         with path.open("rb") as stream:
             fingerprints[path.name] = hashlib.file_digest(stream, "sha256").hexdigest()
-    metadata = {"denoise": [off_record, on_record], "timeline": records, "sha256": fingerprints,
+    metadata = {"denoise": [off_record, on_record], "codec": codec_record, "timeline": records, "sha256": fingerprints,
                 "denoise_stage": "Before video encoding; identical crop and no contrast enhancement",
-                "denoise_detail": {"crop_xywh": SKY_DETAIL, "magnification": 2},
+                "denoise_detail": {"context_crop_xywh": CONTEXT_CROP,
+                                   "detail_crop_xywh": NOISE_DETAIL, "magnification": 2},
                 "timeline_layout": "Schematic; thumbnails are real source frames and spacing is not a time scale"}
     (EVIDENCE / "provenance.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     app.quit()
