@@ -1,4 +1,6 @@
 {
+  "AV1 (SVT-AV1)": "AV1 (SVT-AV1)",
+  "HEVC / H.265 (x265)": "HEVC / H.265 (x265)",
   "File {index} of {count}: {name}": "File {index} of {count}: {name}",
   "Overall progress ({elapsed} / {total})": "Overall progress ({elapsed} / {total})",
   "Current stage": "Current stage",

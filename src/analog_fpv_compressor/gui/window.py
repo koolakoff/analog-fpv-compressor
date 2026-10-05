@@ -174,7 +174,8 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(self.advanced_toggle)
         self.advanced_panel = QWidget()
         advanced_form = QFormLayout(self.advanced_panel)
-        self.codec = self.form_row(advanced_form, "Codec", self.combo([("av1", "AV1"), ("hevc", "HEVC")]))
+        self.codec = self.form_row(advanced_form, "Codec", self.combo([
+            ("av1", "AV1 (SVT-AV1)"), ("hevc", "HEVC / H.265 (x265)")]))
         self.rate_mode = self.form_row(advanced_form, "Rate control", self.combo([
             ("auto", "Auto"), ("crf", "CRF"), ("bitrate", "Target bitrate")]))
         self.crf = self.form_row(advanced_form, "CRF (lower means less compression)", QSpinBox())

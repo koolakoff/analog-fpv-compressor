@@ -146,3 +146,10 @@ These tools create explicit research JSON/CSV; application logging is unchanged.
 at identical codec settings on four excerpts, with warmup, repeated AV1 pairs,
 frame alignment and full decode validation. Use a fresh directory.
 Results and limits: [Denoise recheck](../docs/research/denoise-recheck-2026-10-05.md).
+
+## NVIDIA hardware encoder study
+
+`recheck_nvenc.py --directory outputs/nvenc-new --ffmpeg-dir PATH` checks actual
+NVENC availability, short off/medium pairs, CPU controls and full Frantisek
+frame preservation. Requires the prepared clips from the denoise recheck.
+[Results, driver compatibility and limitations](../docs/research/nvenc-2026-10-05.md).
