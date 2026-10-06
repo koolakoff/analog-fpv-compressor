@@ -12,7 +12,7 @@ Jemné textúry možno obmedziť kvôli menšiemu súboru. Automatické nastaven
 východiskom; ručné umožňujú zvoliť pomer veľkosti, detailov a času spracovania.
 Pôvodné záznamy zostávajú zachované. Zvuk sa predvolene odstráni.
 
-[**Stiahnuť Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.3.0)
+[**Stiahnuť Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.4.0)
 · [Grafické rozhranie](#grafické-rozhranie) · [Konzolová verzia](#konzola)
 
 ## Funkcie pre analógové FPV záznamy
@@ -70,9 +70,9 @@ počas letu môže tiež vytvoriť hranicu.
 
 Tvorcom programu je autor [tohto YouTube kanála o FPV dronoch](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 
-Aktuálna zdrojová verzia **0.3.0** obsahuje jadro v Pythone, CLI, grafické
+Aktuálna zdrojová verzia **0.4.0** obsahuje jadro v Pythone, CLI, grafické
 rozhranie, dávkové spracovanie, automatické názvy a rozdelenie podľa šumu.
-Windows ZIP **0.3.0** obsahuje GUI aj CLI spolu s Pythonom, NumPy a Qt/PySide6.
+Windows ZIP **0.4.0** obsahuje GUI aj CLI spolu s Pythonom, NumPy a Qt/PySide6.
 Spájanie viacerých
 vstupných záznamov a samostatný inštalátor aplikácie sú plánované do budúcnosti.
 
@@ -172,7 +172,7 @@ zadať ručne. Deinterlace podporuje `auto`, `off`, `on`; poradie polí `auto`,
 je v konflikte s `--cut-no-signal off`. Existujúce výsledky a kolízie názvov sa
 odmietnu. Pri opakovanom spracovaní vyberte nový názov.
 
-## Windows ZIP 0.3.0
+## Windows ZIP 0.4.0
 
 1. Stiahnite Windows x64 ZIP z [GitHub Releases](https://github.com/koolakoff/analog-fpv-compressor/releases).
 2. Rozbaľte celý priečinok; `_internal/` musí zostať vedľa `fpv-compress.exe`.

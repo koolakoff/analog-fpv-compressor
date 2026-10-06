@@ -45,6 +45,14 @@ def main():
         expected, relative = line.split("  ", 1)
         if hashlib.sha256((bundle / relative).read_bytes()).hexdigest() != expected:
             raise RuntimeError(f"Bundle checksum mismatch: {relative}")
+    # Verify all user guides and illustrations match the release sources.
+    guides = [Path("README.md"), *(Path("docs") / name for name in
+              ("README_RU.md", "README_UK.md", "README_SK.md"))]
+    illustrations = [path.relative_to(ROOT) for path in (ROOT / "docs/images").rglob("*")
+                     if path.is_file()]
+    for relative in guides + illustrations:
+        if (bundle / relative).read_bytes() != (ROOT / relative).read_bytes():
+            raise RuntimeError(f"Missing or outdated release documentation: {relative}")
     environment = {key: value for key, value in os.environ.items()
                    if key.upper() in ("SYSTEMROOT", "WINDIR", "TEMP", "TMP")}
     environment["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32")

@@ -14,7 +14,7 @@
 деталізації та часу обробки. Оригінальні записи зберігаються.
 Звук типово видаляється.
 
-[**Завантажити Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.3.0)
+[**Завантажити Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.4.0)
 · [Графічний інтерфейс](#графічний-інтерфейс) · [Консольна версія](#консоль)
 
 ## Особливості для аналогового FPV
@@ -72,9 +72,9 @@ FFmpeg. Альтернативний варіант — HEVC/H.265. MKV і MP4 �
 
 Творець програми — автор [YouTube-каналу про FPV-дрони](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 
-Поточні вихідні файли **0.3.0** містять Python-ядро, CLI, графічний інтерфейс,
+Поточні вихідні файли **0.4.0** містять Python-ядро, CLI, графічний інтерфейс,
 пакетну обробку, автоматичні назви та розділення за білим шумом. Опублікований
-Windows ZIP **0.3.0** містить GUI та CLI разом із Python, NumPy та Qt/PySide6.
+Windows ZIP **0.4.0** містить GUI та CLI разом із Python, NumPy та Qt/PySide6.
 Об’єднання
 кількох вхідних записів та окремий інсталятор програми — майбутні завдання.
 
@@ -175,7 +175,7 @@ FFmpeg потрібен для обох інтерфейсів. У ZIP відк�
 з `--cut-no-signal off`. Колізії назв і наявні результати відхиляються:
 для повторної обробки виберіть іншу назву.
 
-## Windows ZIP 0.3.0
+## Windows ZIP 0.4.0
 
 1. Завантажте Windows x64 ZIP з [GitHub Releases](https://github.com/koolakoff/analog-fpv-compressor/releases).
 2. Розпакуйте всю папку; `_internal/` має залишатися поруч з `fpv-compress.exe`.

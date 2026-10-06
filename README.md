@@ -12,7 +12,7 @@ obstacles. Fine textures can be reduced to save space. Automatic settings provid
 a starting point; manual controls let you balance size, detail and processing time.
 Original recordings are preserved. Audio is removed by default.
 
-[**Download the Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.3.0)
+[**Download the Windows ZIP**](https://github.com/koolakoff/analog-fpv-compressor/releases/tag/v0.4.0)
 · [Graphical interface](#graphical-interface) · [Console usage](#console-usage)
 
 ## Built for analog FPV recordings
@@ -69,9 +69,9 @@ signal loss during a flight can also create a boundary.
 
 The creator of this program is the author of [this YouTube channel about FPV drones](https://www.youtube.com/channel/UCGZrwTM5WFiGD-B0F7V_9Kw).
 
-Current source version **0.3.0** includes a Python core, CLI and graphical UI,
+Current source version **0.4.0** includes a Python core, CLI and graphical UI,
 batch processing, automatic output names and snow-based splitting. Windows ZIP
-**0.3.0** contains both GUI and CLI with Python and Qt included.
+**0.4.0** contains both GUI and CLI with Python and Qt included.
 Joining multiple input
 files and a dedicated application installer remain future work.
 
@@ -171,7 +171,7 @@ set together. Deinterlace supports `auto`, `off`, `on`; field order supports
 `--split-flights` conflicts with `--cut-no-signal off`. Existing outputs and
 colliding names are rejected. Choose a new output name for another run.
 
-## Windows ZIP 0.3.0
+## Windows ZIP 0.4.0
 
 1. Download the Windows x64 ZIP from [GitHub Releases](https://github.com/koolakoff/analog-fpv-compressor/releases).
 2. Extract the entire folder; keep `_internal/` beside `fpv-compress.exe`.

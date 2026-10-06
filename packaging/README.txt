@@ -16,6 +16,12 @@ The essentials build lacks libsvtav1 and is not suitable for the default codec.
 An existing full WinGet installation is detected automatically.
 You can also use --ffmpeg-dir "C:\path\to\ffmpeg\bin".
 
+User guides with screenshots and illustrations:
+  English: README.md
+  Russian: docs/README_RU.md
+  Ukrainian: docs/README_UK.md
+  Slovak: docs/README_SK.md
+
 Examples, from the extracted directory:
   .\fpv-compress.exe -i "C:\Videos\flight.avi" -o "C:\Videos\flight-small.mkv"
   .\fpv-compress.exe -i "flight.avi" -o "compact.mkv" --scale 480x360

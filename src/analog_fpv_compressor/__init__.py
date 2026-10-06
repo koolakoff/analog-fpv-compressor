@@ -2,7 +2,7 @@
 
 from .models import Analysis, CancelToken, Event, Plan, Result, Settings
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = ["Analysis", "CancelToken", "Event", "Plan", "Result", "Settings", "analyze", "build_plan", "process", "execute", "make_jobs", "plan_outputs"]
 
 
